@@ -14,7 +14,6 @@ public class DiscardPile : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        Debug.Log("enter");
         if (gameManager.draggingCard)
         {
             gameManager.draggingOverDiscard = true;

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,14 +7,14 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour {
 
 	public Deck deck;
-	public GameObject playerField, computerField;
+	public Transform playerField, computerField;
 	public GameObject cardPrefab;
 	public GameObject gameOverPanel;
 	public Text winnerText;
 	public Card[] cardList;
 	public Sprite cardBack;
 	private int currentDeckIndex = 0;
-	public Transform drawnCardTransform, discardTransform;
+	public Transform drawnCardTransform, discardTransform, deckTransform;
 	public bool draggingCard = false, draggingOverDiscard = false;
 	public GameObject draggingOverCard = null;
 	public Button endTurnButton;
@@ -25,24 +26,40 @@ public class GameManager : MonoBehaviour {
 		ShuffleDeck ();
 		Deal ("player");
 		Deal ("computer");
+		CreateTopCard();
+		// Disable computer cards at the start
+		EnableComputerCards(false);
+		// Disable player cards at the start,
+		// since there is nothing in discard yet
+		EnableAllCards(false);
+		// But enable top card of deck
+		deckTransform.GetChild(0).GetComponent<Image>().raycastTarget = true;
 		OnlyShowBottomTwo ();
 		PlayerTurn ();
 	}
 
-	void PlayerTurn ()
-    {
-		DrawCard ();
-    }
+	private void EnableComputerCards(bool enable)
+	{
+		foreach(Transform cardTransform in computerField)
+		{
+			cardTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
+		}
+	}
 
-	void DrawCard ()
-    {
-		GameObject drawnCard = Instantiate(cardPrefab, drawnCardTransform, false);
-		drawnCard.GetComponent<CardDisplay>().card =
+	private void CreateTopCard()
+	{
+		GameObject topCard = Instantiate(cardPrefab, deckTransform, false);
+		topCard.GetComponent<CardDisplay>().card =
 			deck.currentDeck[currentDeckIndex];
-		drawnCard.GetComponent<CardDisplay>().ShowFront(true);
-		drawnCard.GetComponent<CardDisplay>().isDrawnCard = true;
+		topCard.GetComponent<CardDisplay>().ShowFront(false);
+		topCard.GetComponent<CardDisplay>().isDrawnCard = false;
 		currentDeckIndex++;
 	}
+
+	void PlayerTurn ()
+    {
+		
+    }
 
 	void InitializeDeck ()
 	{
@@ -84,13 +101,39 @@ public class GameManager : MonoBehaviour {
 		// For each card in the deck, move it to a random location
 		// and make sure that location is empty first
 		for (int i = 0; i < deck.startingDeck.Length; i++) {
-			int randomIndex = Random.Range (0, deck.startingDeck.Length);
+			int randomIndex = UnityEngine.Random.Range (0, deck.startingDeck.Length);
 			while (temp [randomIndex] != null) {
-				randomIndex = Random.Range (0, deck.startingDeck.Length);
+				randomIndex = UnityEngine.Random.Range (0, deck.startingDeck.Length);
 			}
 			temp [randomIndex] = deck.startingDeck [i];
 		}
 		deck.currentDeck = temp;
+	}
+
+	internal void TurnOver()
+	{
+		endTurnButton.interactable = true;
+		EnableAllCards(false);
+	}
+
+	public void EnableAllCards(bool enable)
+	{
+		// Make it so the player can't interact with any more cards
+		// after taking action (or enable them for start of next turn)
+		foreach (Transform cardTransform in playerField.transform)
+		{
+			cardTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
+		}
+		// Disable (or enable) all cards in discard
+		foreach (Transform card in discardTransform)
+		{
+			card.GetComponent<Image>().raycastTarget = enable;
+		}
+		// Disable (or enable) top card of deck
+		if (deckTransform.childCount > 0)
+		{
+			deckTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
+		}
 	}
 
 	void Deal (string dealTo)
@@ -135,14 +178,18 @@ public class GameManager : MonoBehaviour {
 	public void EndTurn ()
 	{
 		//ComputerTurn ();
-
-		// For now, just deal another card to the player
-		DrawCard ();
+		// Only create a new top card if we took from the deck,
+		// not if we took from the discard
+		if (deckTransform.childCount == 0)
+		{
+			CreateTopCard();
+		}
 		// This button should only be interactable if we have either
 		// swapped the drawn card for one of our own or dropped
 		// the drawn card in the discard pile.
 		// Deactivate it for the start of the next turn
 		endTurnButton.interactable = false;
+		EnableAllCards(true);
 	}
 
 	void ComputerTurn ()

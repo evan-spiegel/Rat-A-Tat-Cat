@@ -12,6 +12,19 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         gameManager.draggingCard = true;
         GetComponent<CanvasGroup>().blocksRaycasts = false;
+        // If we are the top card of the deck
+        if (transform.parent == gameManager.deckTransform)
+        {
+            GetComponent<CardDisplay>().isDrawnCard = true;
+            GetComponent<CardDisplay>().ShowFront(true);
+            transform.SetParent(gameManager.drawnCardTransform);
+            // We only need to enable the player cards if
+            // there is nothing in the discard
+            if (gameManager.discardTransform.childCount == 0)
+            {
+                gameManager.EnableAllCards(true);
+            }
+        }
     }
 
     public void OnDrag (PointerEventData eventData)
@@ -55,9 +68,10 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private void DiscardDrawnCard ()
     {
         transform.SetParent(gameManager.discardTransform);
+        transform.localPosition = Vector2.zero;
         GetComponent<CardDisplay>().isDrawnCard = false;
         GetComponent<CardDisplay>().isInDiscard = true;
-        gameManager.endTurnButton.interactable = true;
+        gameManager.TurnOver();
     }
 
     private void SwapForCard (GameObject otherCard)
@@ -80,14 +94,14 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         otherCard.transform.localPosition = Vector2.zero;
         UpdateCardStatus(gameObject);
         UpdateCardStatus(otherCard);
-        gameManager.endTurnButton.interactable = true;
+        gameManager.TurnOver();
     }
 
     private void UpdateCardStatus (GameObject card)
     {
         CardDisplay cardD = card.GetComponent<CardDisplay>();
         // If we belong to the player
-        if (card.transform.parent.parent.gameObject == gameManager.playerField)
+        if (card.transform.parent.parent.gameObject == gameManager.playerField.gameObject)
         {
             cardD.belongsToPlayer = true;
             cardD.isInDiscard = false;
