@@ -12,12 +12,13 @@ public class GameManager : MonoBehaviour {
 	public GameObject gameOverPanel;
 	public Text winnerText;
 	public Card[] cardList;
-	public Sprite cardBack;
+	public Sprite cardBack, swapArtwork;
 	private int currentDeckIndex = 0;
 	public Transform drawnCardTransform, discardTransform, deckTransform;
 	public bool draggingCard = false, draggingOverDiscard = false;
 	public GameObject draggingOverCard = null;
 	public Button endTurnButton;
+	public bool swapping = false;
 
 	void Start () {
 		endTurnButton.interactable = false;
@@ -31,14 +32,14 @@ public class GameManager : MonoBehaviour {
 		EnableComputerCards(false);
 		// Disable player cards at the start,
 		// since there is nothing in discard yet
-		EnableAllCards(false);
+		EnablePlayerCards(false);
 		// But enable top card of deck
 		deckTransform.GetChild(0).GetComponent<Image>().raycastTarget = true;
 		OnlyShowBottomTwo ();
 		PlayerTurn ();
 	}
 
-	private void EnableComputerCards(bool enable)
+	public void EnableComputerCards(bool enable)
 	{
 		foreach(Transform cardTransform in computerField)
 		{
@@ -113,10 +114,12 @@ public class GameManager : MonoBehaviour {
 	internal void TurnOver()
 	{
 		endTurnButton.interactable = true;
-		EnableAllCards(false);
+		EnablePlayerCards(false);
+		EnableDiscard(false);
+		EnableDeck(false);
 	}
 
-	public void EnableAllCards(bool enable)
+	public void EnablePlayerCards(bool enable)
 	{
 		// Make it so the player can't interact with any more cards
 		// after taking action (or enable them for start of next turn)
@@ -124,15 +127,32 @@ public class GameManager : MonoBehaviour {
 		{
 			cardTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
 		}
+	}
+
+	public void EnableDiscard(bool enable)
+	{
 		// Disable (or enable) all cards in discard
 		foreach (Transform card in discardTransform)
 		{
 			card.GetComponent<Image>().raycastTarget = enable;
 		}
+	}
+
+	public void EnableDeck(bool enable)
+	{
 		// Disable (or enable) top card of deck
 		if (deckTransform.childCount > 0)
 		{
 			deckTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
+		}
+	}
+
+	public void EnableDrawnCard(bool enable)
+	{
+		// Disable (or enable) the drawn card
+		if (drawnCardTransform.childCount > 0)
+		{
+			drawnCardTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
 		}
 	}
 
@@ -145,9 +165,16 @@ public class GameManager : MonoBehaviour {
 			card.GetComponent<CardDisplay> ().card = 
 				deck.currentDeck [currentDeckIndex + i];
 			if (dealTo == "player")
+			{
 				card.GetComponent<CardDisplay>().belongsToPlayer = true;
+				card.GetComponent<CardDisplay>().belongsToComputer = false;
+			}
+			// dealTo == "computer"
 			else
+			{
 				card.GetComponent<CardDisplay>().belongsToPlayer = false;
+				card.GetComponent<CardDisplay>().belongsToComputer = true;
+			}
 		}
 		currentDeckIndex += 4;
 	}
@@ -189,7 +216,20 @@ public class GameManager : MonoBehaviour {
 		// the drawn card in the discard pile.
 		// Deactivate it for the start of the next turn
 		endTurnButton.interactable = false;
-		EnableAllCards(true);
+		EnablePlayerCards(true);
+		// Only enable discard if top card is not a power card
+		if (!TopDiscardIsPowerCard())
+		{
+			EnableDiscard(true);
+		}
+		EnableDeck(true);
+	}
+
+	private bool TopDiscardIsPowerCard()
+	{
+		string topDiscardType = discardTransform.GetChild(discardTransform.childCount - 1)
+			.GetComponent<CardDisplay>().card.cardType;
+		return topDiscardType == "draw two" || topDiscardType == "peek" || topDiscardType == "swap";
 	}
 
 	void ComputerTurn ()

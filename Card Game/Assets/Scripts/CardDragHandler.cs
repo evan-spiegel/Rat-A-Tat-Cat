@@ -10,20 +10,54 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public void OnBeginDrag (PointerEventData eventData)
     {
+        CardDisplay cardD = GetComponent<CardDisplay>();
         gameManager.draggingCard = true;
         GetComponent<CanvasGroup>().blocksRaycasts = false;
         // If we are the top card of the deck
         if (transform.parent == gameManager.deckTransform)
         {
-            GetComponent<CardDisplay>().isDrawnCard = true;
-            GetComponent<CardDisplay>().ShowFront(true);
-            transform.SetParent(gameManager.drawnCardTransform);
-            // We only need to enable the player cards if
-            // there is nothing in the discard
-            if (gameManager.discardTransform.childCount == 0)
+            // First, check if it's a power card
+            if (cardD.card.cardType == "draw two")
             {
-                gameManager.EnableAllCards(true);
+
             }
+            else if (cardD.card.cardType == "peek")
+            {
+
+            }
+            else if (cardD.card.cardType == "swap")
+            {
+                // Don't put it in the discard right away;
+                // have it on the field at first before the swap
+                // is completed, then move it to the discard after
+                // to show it's completed and the turn is over
+                transform.SetParent(gameManager.drawnCardTransform);
+                // Don't allow player to swap the swap card for one of their own
+                gameManager.EnablePlayerCards(false);
+            }
+            // It's a number card
+            else
+            {
+                transform.SetParent(gameManager.drawnCardTransform);
+                // We only need to enable the player cards if
+                // there is nothing in the discard
+                if (gameManager.discardTransform.childCount == 0)
+                {
+                    gameManager.EnablePlayerCards(true);
+                }
+                // Enable the discard if we are dragging the drawn card
+                // (and it's a number card)
+                gameManager.EnableDiscard(true);
+            }
+
+            cardD.isDrawnCard = true;
+            cardD.ShowFront(true);
+        }
+        // If we're picking up the drawn card again after
+        // dropping it onto the field
+        else if (transform.parent == gameManager.drawnCardTransform)
+        {
+            gameManager.EnableDiscard(true);
         }
     }
 
@@ -53,16 +87,80 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             {
                 DiscardDrawnCard();
             }
+            // If we are swapping one of our cards for one of the computer's cards
+            else if (CanSwapWithComputer(otherCard))
+            {
+                SwapForComputerCard(otherCard);
+            }
         }
         else
         {
+            // Check if it's a swap card
+            if (GetComponent<CardDisplay>().card.cardType == "swap")
+            {
+                // Start the swap process
+                gameManager.EnablePlayerCards(true);
+                gameManager.EnableComputerCards(true);
+                gameManager.EnableDiscard(false);
+                gameManager.EnableDrawnCard(false);
+                gameManager.swapping = true;
+            }
             // We're dragging and dropping the drawn card into the discard pile
-            if (gameManager.draggingOverDiscard && GetComponent<CardDisplay>().isDrawnCard)
+            else if (gameManager.draggingOverDiscard && GetComponent<CardDisplay>().isDrawnCard)
             {
                 DiscardDrawnCard();
             }
+            // We're just dropping the drawn card onto the field for now
+            else
+            {
+                // Discard should be disabled if we have already drawn a card from the deck
+                gameManager.EnableDiscard(false);
+            }
         }
         transform.localPosition = Vector2.zero;
+    }
+
+    private void SwapForComputerCard(GameObject otherCard)
+    {
+        // Swap parents
+        Transform thisCardParent = transform.parent;
+        Transform otherCardParent = otherCard.transform.parent;
+        transform.SetParent(otherCardParent);
+        otherCard.transform.SetParent(thisCardParent);
+
+        transform.localPosition = Vector2.zero;
+        otherCard.transform.localPosition = Vector2.zero;
+        UpdateCardStatus(gameObject);
+        UpdateCardStatus(otherCard);
+        // Move swap card to discard pile
+        MovePowerCardToDiscard();
+        gameManager.swapping = false;
+        gameManager.EnableComputerCards(false);
+        gameManager.TurnOver();
+    }
+
+    private void MovePowerCardToDiscard()
+    {
+        GameObject powerCard = gameManager.drawnCardTransform.GetChild(0).gameObject;
+        powerCard.transform.SetParent(gameManager.discardTransform);
+        powerCard.transform.localPosition = Vector2.zero;
+        UpdateCardStatus(powerCard);
+    }
+
+    private bool CanSwapWithComputer(GameObject otherCard)
+    {
+        if (gameManager.swapping)
+        {
+            if ((GetComponent<CardDisplay>().belongsToPlayer &&
+                otherCard.GetComponent<CardDisplay>().belongsToComputer) ||
+                (GetComponent<CardDisplay>().belongsToComputer &&
+                otherCard.GetComponent<CardDisplay>().belongsToPlayer))
+            {
+                return true;
+            }
+            return false;
+        }
+        return false;
     }
 
     private void DiscardDrawnCard ()
@@ -101,17 +199,27 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         CardDisplay cardD = card.GetComponent<CardDisplay>();
         // If we belong to the player
-        if (card.transform.parent.parent.gameObject == gameManager.playerField.gameObject)
+        if (card.transform.parent.parent == gameManager.playerField)
         {
             cardD.belongsToPlayer = true;
+            cardD.belongsToComputer = false;
             cardD.isInDiscard = false;
             // Only show the front of the card if it's in the bottom two
             cardD.ShowFront(card.transform.parent.tag == "Bottom Card");
+        }
+        // If we belong to the computer
+        else if (card.transform.parent.parent == gameManager.computerField)
+        {
+            cardD.belongsToPlayer = false;
+            cardD.belongsToComputer = true;
+            cardD.isInDiscard = false;
+            cardD.ShowFront(false);
         }
         // If we are in the discard
         else
         {
             cardD.belongsToPlayer = false;
+            cardD.belongsToComputer = false;
             cardD.isInDiscard = true;
             // Show the front of the card if it's in the discard pile
             cardD.ShowFront(true);

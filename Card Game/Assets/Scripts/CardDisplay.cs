@@ -14,7 +14,7 @@ public class CardDisplay : MonoBehaviour,
 	public Vector3 InitialScale { get; set; }
 	private float highlightScale = 0.05f;
 	private GameManager gameManager;
-	public bool belongsToPlayer = false;
+	public bool belongsToPlayer = false, belongsToComputer = false;
 	public bool isDrawnCard = false;
 	public bool isInDiscard = false;
 

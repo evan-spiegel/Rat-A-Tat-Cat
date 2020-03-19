@@ -967,6 +967,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5d2e00c259778ec4dafd872affb2dfb7, type: 2}
   - {fileID: 11400000, guid: d16f5ae899e0ca34aa8011560393e7f6, type: 2}
   cardBack: {fileID: 21300000, guid: d84c1c90465712b4e96b26aba3c06ed7, type: 3}
+  swapArtwork: {fileID: 21300000, guid: e02abb18e3e476e46a8d88a1971fd3b3, type: 3}
   drawnCardTransform: {fileID: 1961931701}
   discardTransform: {fileID: 1311122478}
   deckTransform: {fileID: 588576083}
@@ -974,6 +975,7 @@ MonoBehaviour:
   draggingOverDiscard: 0
   draggingOverCard: {fileID: 0}
   endTurnButton: {fileID: 1912076794}
+  swapping: 0
 --- !u!4 &1732861034
 Transform:
   m_ObjectHideFlags: 0
