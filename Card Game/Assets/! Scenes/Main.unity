@@ -533,6 +533,7 @@ RectTransform:
   - {fileID: 1961931701}
   - {fileID: 1311122478}
   - {fileID: 1912076793}
+  - {fileID: 1530939815}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -916,6 +917,41 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1311122477}
   m_CullTransparentMesh: 0
+--- !u!1 &1530939814
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1530939815}
+  m_Layer: 5
+  m_Name: Power Card Transform
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1530939815
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1530939814}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 775437038}
+  m_RootOrder: 6
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 182, y: 98.5}
+  m_SizeDelta: {x: 60, y: 80}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1732861032
 GameObject:
   m_ObjectHideFlags: 0
@@ -971,11 +1007,14 @@ MonoBehaviour:
   drawnCardTransform: {fileID: 1961931701}
   discardTransform: {fileID: 1311122478}
   deckTransform: {fileID: 588576083}
+  powerCardTransform: {fileID: 1530939815}
   draggingCard: 0
   draggingOverDiscard: 0
   draggingOverCard: {fileID: 0}
   endTurnButton: {fileID: 1912076794}
   swapping: 0
+  drawingTwo: 0
+  drawTwoIndex: 0
 --- !u!4 &1732861034
 Transform:
   m_ObjectHideFlags: 0

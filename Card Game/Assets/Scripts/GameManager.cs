@@ -14,11 +14,12 @@ public class GameManager : MonoBehaviour {
 	public Card[] cardList;
 	public Sprite cardBack, swapArtwork;
 	private int currentDeckIndex = 0;
-	public Transform drawnCardTransform, discardTransform, deckTransform;
+	public Transform drawnCardTransform, discardTransform, deckTransform, powerCardTransform;
 	public bool draggingCard = false, draggingOverDiscard = false;
 	public GameObject draggingOverCard = null;
 	public Button endTurnButton;
-	public bool swapping = false;
+	public bool swapping = false, drawingTwo = false;
+	public int drawTwoIndex = 0;
 
 	void Start () {
 		endTurnButton.interactable = false;
@@ -47,7 +48,7 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 
-	private void CreateTopCard()
+	public void CreateTopCard()
 	{
 		GameObject topCard = Instantiate(cardPrefab, deckTransform, false);
 		topCard.GetComponent<CardDisplay>().card =
@@ -235,5 +236,11 @@ public class GameManager : MonoBehaviour {
 	void ComputerTurn ()
 	{
 		
+	}
+
+	internal void DrawTwoOver()
+	{
+		drawTwoIndex = 0;
+		drawingTwo = false;
 	}
 }

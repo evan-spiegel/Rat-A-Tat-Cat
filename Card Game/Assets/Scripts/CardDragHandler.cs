@@ -8,6 +8,11 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 {
     private GameManager gameManager;
 
+    void Start()
+    {
+        gameManager = FindObjectOfType<GameManager>();
+    }
+
     public void OnBeginDrag (PointerEventData eventData)
     {
         CardDisplay cardD = GetComponent<CardDisplay>();
@@ -16,10 +21,18 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         // If we are the top card of the deck
         if (transform.parent == gameManager.deckTransform)
         {
-            // First, check if it's a power card
+            // First, check if it's a power card.
+            // If it is, don't put it in the discard right away;
+            // have it on the field at first before the action
+            // is completed, then move it to the discard after
+            // to show it's completed and the turn is over
             if (cardD.card.cardType == "draw two")
             {
-
+                transform.SetParent(gameManager.powerCardTransform);
+                // Disable player cards for now since player can't
+                // swap for discard; enable once card is drawn from deck
+                gameManager.EnablePlayerCards(false);
+                gameManager.drawTwoIndex = 0;
             }
             else if (cardD.card.cardType == "peek")
             {
@@ -27,17 +40,20 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             }
             else if (cardD.card.cardType == "swap")
             {
-                // Don't put it in the discard right away;
-                // have it on the field at first before the swap
-                // is completed, then move it to the discard after
-                // to show it's completed and the turn is over
-                transform.SetParent(gameManager.drawnCardTransform);
+                transform.SetParent(gameManager.powerCardTransform);
                 // Don't allow player to swap the swap card for one of their own
                 gameManager.EnablePlayerCards(false);
+                gameManager.drawTwoIndex = 0;
             }
             // It's a number card
             else
             {
+                if (gameManager.drawingTwo)
+                {
+                    // If this is the first card drawn for draw two,
+                    // this should be 1 after increment
+                    gameManager.drawTwoIndex++;
+                }
                 transform.SetParent(gameManager.drawnCardTransform);
                 // We only need to enable the player cards if
                 // there is nothing in the discard
@@ -102,8 +118,16 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 gameManager.EnablePlayerCards(true);
                 gameManager.EnableComputerCards(true);
                 gameManager.EnableDiscard(false);
-                gameManager.EnableDrawnCard(false);
                 gameManager.swapping = true;
+            }
+            // Check if it's a draw two
+            else if (GetComponent<CardDisplay>().card.cardType == "draw two")
+            {
+                // Start the draw two process
+                gameManager.EnableComputerCards(false);
+                gameManager.EnableDiscard(false);
+                gameManager.drawingTwo = true;
+                gameManager.CreateTopCard();
             }
             // We're dragging and dropping the drawn card into the discard pile
             else if (gameManager.draggingOverDiscard && GetComponent<CardDisplay>().isDrawnCard)
@@ -141,7 +165,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private void MovePowerCardToDiscard()
     {
-        GameObject powerCard = gameManager.drawnCardTransform.GetChild(0).gameObject;
+        GameObject powerCard = gameManager.powerCardTransform.GetChild(0).gameObject;
         powerCard.transform.SetParent(gameManager.discardTransform);
         powerCard.transform.localPosition = Vector2.zero;
         UpdateCardStatus(powerCard);
@@ -169,7 +193,22 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         transform.localPosition = Vector2.zero;
         GetComponent<CardDisplay>().isDrawnCard = false;
         GetComponent<CardDisplay>().isInDiscard = true;
-        gameManager.TurnOver();
+        if (gameManager.drawingTwo)
+        {
+            if (gameManager.drawTwoIndex >= 2)
+            {
+                gameManager.DrawTwoOver();
+                MovePowerCardToDiscard();
+            }
+            else
+            {
+                gameManager.CreateTopCard();
+            }
+        }
+        else
+        {
+            gameManager.TurnOver();
+        }
     }
 
     private void SwapForCard (GameObject otherCard)
@@ -187,6 +226,11 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             otherCard.transform.SetParent(transform.parent);
             transform.SetParent(gameManager.discardTransform);
+        }
+        if (gameManager.drawingTwo)
+        {
+            gameManager.DrawTwoOver();
+            MovePowerCardToDiscard();
         }
         transform.localPosition = Vector2.zero;
         otherCard.transform.localPosition = Vector2.zero;
@@ -249,15 +293,5 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             return true;
         }
         return false;
-    }
-
-    void Start()
-    {
-        gameManager = FindObjectOfType<GameManager>();
-    }
-
-    void Update()
-    {
-        
     }
 }
