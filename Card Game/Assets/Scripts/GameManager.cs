@@ -15,10 +15,10 @@ public class GameManager : MonoBehaviour {
 	public Sprite cardBack, swapArtwork;
 	private int currentDeckIndex = 0;
 	public Transform drawnCardTransform, discardTransform, deckTransform, powerCardTransform;
-	public bool draggingCard = false, draggingOverDiscard = false;
+	public bool draggingCard = false, draggingOverDiscard = false, draggingOverPowerCard = false;
 	public GameObject draggingOverCard = null;
 	public Button endTurnButton;
-	public bool swapping = false, drawingTwo = false;
+	public bool swapping = false, drawingTwo = false, peeking = false;
 	public int drawTwoIndex = 0;
 
 	void Start () {
@@ -157,6 +157,15 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 
+	public void EnablePowerCard(bool enable)
+	{
+		// Disable (or enable) the drawn card
+		if (powerCardTransform.childCount > 0)
+		{
+			powerCardTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
+		}
+	}
+
 	void Deal (string dealTo)
 	{
 		// dealTo should be either "player" or "computer"
@@ -178,6 +187,33 @@ public class GameManager : MonoBehaviour {
 			}
 		}
 		currentDeckIndex += 4;
+	}
+
+    internal void StartPeek()
+    {
+		EnableComputerCards(false);
+		EnableDiscard(false);
+		EnablePowerCard(false);
+		EnablePlayerCards(true);
+		peeking = true;
+    }
+
+    internal void StartDrawTwo()
+	{
+		EnableComputerCards(false);
+		EnableDiscard(false);
+		EnablePowerCard(false);
+		drawingTwo = true;
+		CreateTopCard();
+	}
+
+	internal void StartSwap()
+	{
+		EnablePlayerCards(true);
+		EnableComputerCards(true);
+		EnableDiscard(false);
+		EnablePowerCard(false);
+		swapping = true;
 	}
 
 	void OnlyShowBottomTwo ()
@@ -228,9 +264,8 @@ public class GameManager : MonoBehaviour {
 
 	private bool TopDiscardIsPowerCard()
 	{
-		string topDiscardType = discardTransform.GetChild(discardTransform.childCount - 1)
-			.GetComponent<CardDisplay>().card.cardType;
-		return topDiscardType == "draw two" || topDiscardType == "peek" || topDiscardType == "swap";
+		return discardTransform.GetChild(discardTransform.childCount - 1)
+			.GetComponent<CardDisplay>().IsPowerCard();
 	}
 
 	void ComputerTurn ()

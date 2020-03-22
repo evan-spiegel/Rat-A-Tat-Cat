@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using System;
 
 public class CardDisplay : MonoBehaviour, 
 	IPointerEnterHandler, IPointerExitHandler {
@@ -56,4 +57,9 @@ public class CardDisplay : MonoBehaviour,
 		transform.localScale = InitialScale;
 		gameManager.draggingOverCard = null;
 	}
+
+    internal bool IsPowerCard()
+    {
+		return card.cardType == "draw two" || card.cardType == "peek" || card.cardType == "swap";
+    }
 }

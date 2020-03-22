@@ -36,7 +36,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             }
             else if (cardD.card.cardType == "peek")
             {
-
+                
             }
             else if (cardD.card.cardType == "swap")
             {
@@ -84,6 +84,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public void OnEndDrag (PointerEventData eventData)
     {
+        CardDisplay cardD = GetComponent<CardDisplay>();
         gameManager.draggingCard = false;
         GetComponent<CanvasGroup>().blocksRaycasts = true;
 
@@ -98,10 +99,10 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 SwapForCard(otherCard);
             }
             // If we are dropping the drawn card in the discard pile
-            else if (GetComponent<CardDisplay>().isDrawnCard &&
-                otherCard.GetComponent<CardDisplay>().isInDiscard)
+            else if (cardD.isDrawnCard && otherCard.GetComponent<CardDisplay>().isInDiscard)
             {
-                DiscardDrawnCard();
+                // Check if we're trying to discard a power card
+                CheckIfDiscardingPowerCard();
             }
             // If we are swapping one of our cards for one of the computer's cards
             else if (CanSwapWithComputer(otherCard))
@@ -112,27 +113,42 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         else
         {
             // Check if it's a swap card
-            if (GetComponent<CardDisplay>().card.cardType == "swap")
+            if (cardD.card.cardType == "swap")
             {
                 // Start the swap process
-                gameManager.EnablePlayerCards(true);
-                gameManager.EnableComputerCards(true);
-                gameManager.EnableDiscard(false);
-                gameManager.swapping = true;
+                gameManager.StartSwap();
             }
             // Check if it's a draw two
-            else if (GetComponent<CardDisplay>().card.cardType == "draw two")
+            else if (cardD.card.cardType == "draw two")
             {
                 // Start the draw two process
-                gameManager.EnableComputerCards(false);
-                gameManager.EnableDiscard(false);
-                gameManager.drawingTwo = true;
-                gameManager.CreateTopCard();
+                gameManager.StartDrawTwo();
+            }
+            else if (cardD.card.cardType == "peek")
+            {
+                // Check if player is dropping peek card onto power card transform,
+                // discard pile, or neither
+                if (gameManager.draggingOverPowerCard)
+                {
+                    transform.SetParent(gameManager.powerCardTransform);
+                    gameManager.StartPeek();
+                }
+                else if (gameManager.draggingOverDiscard)
+                {
+                    DiscardDrawnCard();
+                }
+                else
+                {
+                    // Just place peek on the field while player decides whether
+                    // to use it or not (by dragging it to power card transform)
+                    transform.SetParent(gameManager.drawnCardTransform);
+                    gameManager.EnableDiscard(false);
+                }
             }
             // We're dragging and dropping the drawn card into the discard pile
-            else if (gameManager.draggingOverDiscard && GetComponent<CardDisplay>().isDrawnCard)
+            else if (gameManager.draggingOverDiscard && cardD.isDrawnCard)
             {
-                DiscardDrawnCard();
+                CheckIfDiscardingPowerCard();
             }
             // We're just dropping the drawn card onto the field for now
             else
@@ -142,6 +158,24 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             }
         }
         transform.localPosition = Vector2.zero;
+    }
+
+    private void CheckIfDiscardingPowerCard()
+    {
+        CardDisplay cardD = GetComponent<CardDisplay>();
+        if (cardD.card.cardType == "draw two")
+        {
+            gameManager.StartDrawTwo();
+        }
+        else if (cardD.card.cardType == "swap")
+        {
+            gameManager.StartSwap();
+        }
+        // Player can choose to discard or play peek card
+        else
+        {
+            DiscardDrawnCard();
+        }
     }
 
     private void SwapForComputerCard(GameObject otherCard)

@@ -93,6 +93,7 @@
      <Compile Include="Assets\Scripts\DeckObject.cs" />
      <Compile Include="Assets\Scripts\DiscardPile.cs" />
      <Compile Include="Assets\Scripts\GameManager.cs" />
+     <Compile Include="Assets\Scripts\PowerCardTransform.cs" />
      <None Include="Assets\LeanTween\ReadMe.txt" />
      <None Include="Assets\LeanTween\License.txt" />
      <None Include="Assets\LeanTween\Examples\Archived\2dUnlitWithFade.shader" />

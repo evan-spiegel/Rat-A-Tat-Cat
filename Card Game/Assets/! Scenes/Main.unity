@@ -926,6 +926,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1530939815}
+  - component: {fileID: 1530939818}
+  - component: {fileID: 1530939817}
+  - component: {fileID: 1530939816}
   m_Layer: 5
   m_Name: Power Card Transform
   m_TagString: Untagged
@@ -952,6 +955,56 @@ RectTransform:
   m_AnchoredPosition: {x: 182, y: 98.5}
   m_SizeDelta: {x: 60, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1530939816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1530939814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_RaycastTarget: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+    m_TypeName: UnityEngine.UI.MaskableGraphic+CullStateChangedEvent, Unity.ugui,
+      Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1530939817
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1530939814}
+  m_CullTransparentMesh: 0
+--- !u!114 &1530939818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1530939814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19618eaeccfdd814d92907d26e9ca7f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1732861032
 GameObject:
   m_ObjectHideFlags: 0
@@ -1010,6 +1063,7 @@ MonoBehaviour:
   powerCardTransform: {fileID: 1530939815}
   draggingCard: 0
   draggingOverDiscard: 0
+  draggingOverPowerCard: 0
   draggingOverCard: {fileID: 0}
   endTurnButton: {fileID: 1912076794}
   swapping: 0
