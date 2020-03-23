@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 using System;
 
 public class CardDisplay : MonoBehaviour, 
-	IPointerEnterHandler, IPointerExitHandler {
+	IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler {
 
 	public Card card;
 
@@ -62,4 +62,18 @@ public class CardDisplay : MonoBehaviour,
     {
 		return card.cardType == "draw two" || card.cardType == "peek" || card.cardType == "swap";
     }
+
+	public void OnPointerDown(PointerEventData eventData)
+	{
+		if (gameManager.peeking && belongsToPlayer && transform.parent.tag != "Bottom Card")
+		{
+			// Peek at this card since it's one of our top cards
+			ShowFront(true);
+			// Enable the peek card so that player can drag it to discard
+			// to show they're done peeking and are ending their turn
+			gameManager.EnablePowerCard(true);
+			gameManager.EnableTopTwoPlayerCards(false);
+			gameManager.peekedCard = gameObject;
+		}
+	}
 }

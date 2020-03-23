@@ -55,12 +55,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                     gameManager.drawTwoIndex++;
                 }
                 transform.SetParent(gameManager.drawnCardTransform);
-                // We only need to enable the player cards if
-                // there is nothing in the discard
-                if (gameManager.discardTransform.childCount == 0)
-                {
-                    gameManager.EnablePlayerCards(true);
-                }
+                gameManager.EnablePlayerCards(true);
                 // Enable the discard if we are dragging the drawn card
                 // (and it's a number card)
                 gameManager.EnableDiscard(true);
@@ -72,6 +67,12 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         // If we're picking up the drawn card again after
         // dropping it onto the field
         else if (transform.parent == gameManager.drawnCardTransform)
+        {
+            gameManager.EnableDiscard(true);
+        }
+        // If we're dragging the peek card to the discard to
+        // show we're done peeking
+        else if (transform.parent == gameManager.powerCardTransform)
         {
             gameManager.EnableDiscard(true);
         }
@@ -135,7 +136,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 }
                 else if (gameManager.draggingOverDiscard)
                 {
-                    DiscardDrawnCard();
+                    CheckIfDiscardingPowerCard();
                 }
                 else
                 {
@@ -170,6 +171,23 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         else if (cardD.card.cardType == "swap")
         {
             gameManager.StartSwap();
+        }
+        else if (cardD.card.cardType == "peek")
+        {
+            if (gameManager.peeking)
+            {
+                // Stop peeking
+                MovePowerCardToDiscard();
+                gameManager.peeking = false;
+                // Flip the peeked card back over
+                gameManager.peekedCard.GetComponent<CardDisplay>().ShowFront(false);
+                gameManager.peekedCard = null;
+                gameManager.TurnOver();
+            }
+            else
+            {
+                DiscardDrawnCard();
+            }
         }
         // Player can choose to discard or play peek card
         else
@@ -232,6 +250,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             if (gameManager.drawTwoIndex >= 2)
             {
                 gameManager.DrawTwoOver();
+                gameManager.TurnOver();
                 MovePowerCardToDiscard();
             }
             else

@@ -16,7 +16,7 @@ public class GameManager : MonoBehaviour {
 	private int currentDeckIndex = 0;
 	public Transform drawnCardTransform, discardTransform, deckTransform, powerCardTransform;
 	public bool draggingCard = false, draggingOverDiscard = false, draggingOverPowerCard = false;
-	public GameObject draggingOverCard = null;
+	public GameObject draggingOverCard = null, peekedCard = null;
 	public Button endTurnButton;
 	public bool swapping = false, drawingTwo = false, peeking = false;
 	public int drawTwoIndex = 0;
@@ -25,7 +25,10 @@ public class GameManager : MonoBehaviour {
 		endTurnButton.interactable = false;
 		//gameOverPanel.SetActive (false);
 		InitializeDeck ();
+
+		// Comment this out to test power cards
 		ShuffleDeck ();
+
 		Deal ("player");
 		Deal ("computer");
 		CreateTopCard();
@@ -93,6 +96,9 @@ public class GameManager : MonoBehaviour {
 				i++;
             }
         }
+
+		// For testing, make the first card the player draws a swap
+		//deck.startingDeck[8] = cardList[12];
 
 		deck.currentDeck = deck.startingDeck;
 	}
@@ -194,11 +200,22 @@ public class GameManager : MonoBehaviour {
 		EnableComputerCards(false);
 		EnableDiscard(false);
 		EnablePowerCard(false);
-		EnablePlayerCards(true);
+		EnableTopTwoPlayerCards(true);
 		peeking = true;
     }
 
-    internal void StartDrawTwo()
+	public void EnableTopTwoPlayerCards(bool enable)
+	{
+		foreach (Transform cardTransform in playerField.transform)
+		{
+			if (cardTransform.tag != "Bottom Card")
+			{
+				cardTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
+			}
+		}
+	}
+
+	internal void StartDrawTwo()
 	{
 		EnableComputerCards(false);
 		EnableDiscard(false);
@@ -216,10 +233,10 @@ public class GameManager : MonoBehaviour {
 		swapping = true;
 	}
 
-	void OnlyShowBottomTwo ()
+	public void OnlyShowBottomTwo ()
     {
 		int cardNum = 0;
-		foreach (Transform transform in playerField.transform)
+		foreach (Transform transform in playerField)
         {
 			Transform card = transform.GetChild(0);
 			if (cardNum == 2 || cardNum == 3)
@@ -232,7 +249,7 @@ public class GameManager : MonoBehaviour {
 			}
 			cardNum++;
         }
-		foreach (Transform transform in computerField.transform)
+		foreach (Transform transform in computerField)
 		{
 			Transform card = transform.GetChild(0);
 			card.gameObject.GetComponent<CardDisplay>().ShowFront(false);
