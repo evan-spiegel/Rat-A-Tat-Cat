@@ -76,4 +76,19 @@ public class CardDisplay : MonoBehaviour,
 			gameManager.peekedCard = gameObject;
 		}
 	}
+
+	internal bool IsLessThanFour()
+	{
+		int value = Value();
+		return value != -10 && value < 4;
+    }
+
+	internal int Value()
+	{
+		if (IsPowerCard())
+		{
+			return -10;
+		}
+		return int.Parse(card.cardType);
+	}
 }

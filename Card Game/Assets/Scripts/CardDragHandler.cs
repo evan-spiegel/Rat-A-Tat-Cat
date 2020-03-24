@@ -215,14 +215,6 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         gameManager.TurnOver();
     }
 
-    private void MovePowerCardToDiscard()
-    {
-        GameObject powerCard = gameManager.powerCardTransform.GetChild(0).gameObject;
-        powerCard.transform.SetParent(gameManager.discardTransform);
-        powerCard.transform.localPosition = Vector2.zero;
-        UpdateCardStatus(powerCard);
-    }
-
     private bool CanSwapWithComputer(GameObject otherCard)
     {
         if (gameManager.swapping)
@@ -290,38 +282,6 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         UpdateCardStatus(gameObject);
         UpdateCardStatus(otherCard);
         gameManager.TurnOver();
-    }
-
-    private void UpdateCardStatus (GameObject card)
-    {
-        CardDisplay cardD = card.GetComponent<CardDisplay>();
-        // If we belong to the player
-        if (card.transform.parent.parent == gameManager.playerField)
-        {
-            cardD.belongsToPlayer = true;
-            cardD.belongsToComputer = false;
-            cardD.isInDiscard = false;
-            // Only show the front of the card if it's in the bottom two
-            cardD.ShowFront(card.transform.parent.tag == "Bottom Card");
-        }
-        // If we belong to the computer
-        else if (card.transform.parent.parent == gameManager.computerField)
-        {
-            cardD.belongsToPlayer = false;
-            cardD.belongsToComputer = true;
-            cardD.isInDiscard = false;
-            cardD.ShowFront(false);
-        }
-        // If we are in the discard
-        else
-        {
-            cardD.belongsToPlayer = false;
-            cardD.belongsToComputer = false;
-            cardD.isInDiscard = true;
-            // Show the front of the card if it's in the discard pile
-            cardD.ShowFront(true);
-        }
-        cardD.isDrawnCard = false;
     }
 
     private bool CanSwapDrawnCard (GameObject otherCard)

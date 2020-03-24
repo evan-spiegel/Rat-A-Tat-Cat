@@ -19,9 +19,12 @@ public class GameManager : MonoBehaviour {
 	public GameObject draggingOverCard = null, peekedCard = null;
 	public Button endTurnButton;
 	public bool swapping = false, drawingTwo = false, peeking = false;
+	private bool computerDrawingTwo = false;
 	public int drawTwoIndex = 0;
+	private List<Transform> cardsComputerKnows, computerPowerCards;
 
 	void Start () {
+		cardsComputerKnows = new List<Transform>();
 		endTurnButton.interactable = false;
 		//gameOverPanel.SetActive (false);
 		InitializeDeck ();
@@ -31,6 +34,9 @@ public class GameManager : MonoBehaviour {
 
 		Deal ("player");
 		Deal ("computer");
+		// Computer starts off knowing the bottom two cards, just like the player
+		cardsComputerKnows.Add(computerField.GetChild(0));
+		cardsComputerKnows.Add(computerField.GetChild(1));
 		CreateTopCard();
 		// Disable computer cards at the start
 		EnableComputerCards(false);
@@ -258,7 +264,7 @@ public class GameManager : MonoBehaviour {
 
 	public void EndTurn ()
 	{
-		//ComputerTurn ();
+		ComputerTurn ();
 		// Only create a new top card if we took from the deck,
 		// not if we took from the discard
 		if (deckTransform.childCount == 0)
@@ -272,27 +278,212 @@ public class GameManager : MonoBehaviour {
 		endTurnButton.interactable = false;
 		EnablePlayerCards(true);
 		// Only enable discard if top card is not a power card
-		if (!TopDiscardIsPowerCard())
+		if (!TopDiscard().GetComponent<CardDisplay>().IsPowerCard())
 		{
 			EnableDiscard(true);
 		}
 		EnableDeck(true);
 	}
 
-	private bool TopDiscardIsPowerCard()
+	private GameObject TopDiscard()
 	{
-		return discardTransform.GetChild(discardTransform.childCount - 1)
-			.GetComponent<CardDisplay>().IsPowerCard();
+		return discardTransform.GetChild(discardTransform.childCount - 1).gameObject;
 	}
 
 	void ComputerTurn ()
 	{
-		
+		EnablePlayerCards(false);
+		EnableComputerCards(false);
+		EnableDiscard(false);
+		// Computer should do all the same things the player does:
+		// - Choose to take from deck or discard
+		// - If taking from deck, choose to swap for one of its cards or discard it
+		// - If drawing power card, activate it (unless it's peek, then choose whether to use it)
+		// - Discard power card at the end and end turn
+		// All computer actions should be animated with LeanTween so player can see what's happening
+		ComputerDrawFromDeckOrDiscard();
+	}
+
+	private void ComputerDrawFromDeckOrDiscard()
+	{
+		GameObject topDiscard = TopDiscard();
+		// If there is a zero, one, two, or three on top of the discard pile
+		// the computer should take it
+		if (topDiscard.GetComponent<CardDisplay>().IsLessThanFour())
+		{
+			ComputerTakeFromDiscard(topDiscard);
+		}
+		else
+		{
+			ComputerDrawFromDeck();
+		}
+	}
+
+	private void ComputerDrawFromDeck()
+	{
+		// - If we draw a zero, one, two, or three we should take it
+		// and either swap for an unknown card or a high card with
+		// the greatest difference
+		// - If higher than three, swap for greatest difference
+		// - If swap or draw two, activate it
+		// - If peek, choose whether to activate it
+	}
+
+	private void ComputerTakeFromDiscard(GameObject topDiscard)
+	{
+		int greatestDifference = -1;
+		Transform greatestDifferenceCard = null;
+		Dictionary<int, Transform> greatestDifferenceDict = FindGreatestDifference(topDiscard);
+		// There should be only one key-value pair but we'll use this anyway
+		foreach(KeyValuePair<int,Transform> kvp in greatestDifferenceDict)
+		{
+			greatestDifference = kvp.Key;
+			greatestDifferenceCard = kvp.Value;
+		}
+		if (greatestDifference < 3)
+		{
+			if (computerPowerCards.Count > 0)
+			{
+				// Swap for one of the power cards randomly
+				ComputerSwapForDiscard(computerPowerCards[0]);
+			}
+			else
+			{
+				// Swap for one of the unknown cards randomly
+				if (cardsComputerKnows.Count < 4)
+				{
+					ComputerSwapForDiscard(CardsComputerDoesntKnow()[0]);
+				}
+				// If computer knows all 4 cards, swap for greatest difference
+				else
+				{
+					ComputerSwapForDiscard(greatestDifferenceCard);
+				}
+			}
+		}
+		else
+		{
+			ComputerSwapForDiscard(greatestDifferenceCard);
+		}
+	}
+
+	private Dictionary<int, Transform> FindGreatestDifference(GameObject swapCard)
+	{
+		computerPowerCards = new List<Transform>();
+		int topDiscardValue = swapCard.GetComponent<CardDisplay>().Value();
+		// Choose which card to swap for:
+		// - Subtract card we're taking from each card we know
+		// - Find greatest difference
+		// - If difference is less than three, swap for unknown card or power card
+		// - Otherwise swap for card with biggest difference/highest card
+		int greatestDifference = -100;
+		Transform greatestDifferenceCard = null;
+		foreach (Transform card in cardsComputerKnows)
+		{
+			int cardValue = card.GetComponent<CardDisplay>().Value();
+			// If difference is less than or equal to -10, it's a power card
+			int difference = cardValue - topDiscardValue;
+			// Find the computer's known power card locations
+			if (difference <= -10)
+			{
+				computerPowerCards.Add(card);
+			}
+			if (difference > greatestDifference)
+			{
+				greatestDifference = difference;
+				greatestDifferenceCard = card;
+			}
+		}
+		Dictionary<int, Transform> greatestDifferenceDict = new Dictionary<int, Transform>();
+		greatestDifferenceDict.Add(greatestDifference, greatestDifferenceCard);
+		return greatestDifferenceDict;
+	}
+
+	private void ComputerSwapForDiscard(Transform computerCard)
+	{
+		GameObject topDiscard = TopDiscard();
+		topDiscard.transform.SetParent(computerCard.parent);
+		computerCard.SetParent(discardTransform);
+		if (computerDrawingTwo)
+		{
+			ComputerDrawTwoOver();
+			MovePowerCardToDiscard();
+		}
+		LeanTween.moveLocal(topDiscard, Vector2.zero, 1.0f).setOnComplete(()=>
+		{
+			LeanTween.moveLocal(computerCard.gameObject, Vector2.zero, 1.0f).setOnComplete(()=>
+			{
+				UpdateCardStatus(topDiscard);
+				UpdateCardStatus(computerCard.gameObject);
+				// Flip new computer card over
+				topDiscard.GetComponent<CardDisplay>().ShowFront(false);
+				TurnOver();
+			});
+		});
+	}
+
+	public void MovePowerCardToDiscard()
+	{
+		GameObject powerCard = powerCardTransform.GetChild(0).gameObject;
+		powerCard.transform.SetParent(discardTransform);
+		powerCard.transform.localPosition = Vector2.zero;
+		UpdateCardStatus(powerCard);
+	}
+
+	private void ComputerDrawTwoOver()
+	{
+		drawTwoIndex = 0;
+		computerDrawingTwo = false;
+	}
+
+	private List<Transform> CardsComputerDoesntKnow()
+	{
+		List<Transform> unknownCards = new List<Transform>();
+		foreach(Transform card in computerField)
+		{
+			if (!cardsComputerKnows.Contains(card))
+			{
+				unknownCards.Add(card);
+			}
+		}
+		return unknownCards;
 	}
 
 	internal void DrawTwoOver()
 	{
 		drawTwoIndex = 0;
 		drawingTwo = false;
+	}
+
+	public void UpdateCardStatus(GameObject card)
+	{
+		CardDisplay cardD = card.GetComponent<CardDisplay>();
+		// If we belong to the player
+		if (card.transform.parent.parent == playerField)
+		{
+			cardD.belongsToPlayer = true;
+			cardD.belongsToComputer = false;
+			cardD.isInDiscard = false;
+			// Only show the front of the card if it's in the bottom two
+			cardD.ShowFront(card.transform.parent.tag == "Bottom Card");
+		}
+		// If we belong to the computer
+		else if (card.transform.parent.parent == computerField)
+		{
+			cardD.belongsToPlayer = false;
+			cardD.belongsToComputer = true;
+			cardD.isInDiscard = false;
+			cardD.ShowFront(false);
+		}
+		// If we are in the discard
+		else
+		{
+			cardD.belongsToPlayer = false;
+			cardD.belongsToComputer = false;
+			cardD.isInDiscard = true;
+			// Show the front of the card if it's in the discard pile
+			cardD.ShowFront(true);
+		}
+		cardD.isDrawnCard = false;
 	}
 }
