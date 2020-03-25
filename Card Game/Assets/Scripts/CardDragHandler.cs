@@ -177,7 +177,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             if (gameManager.peeking)
             {
                 // Stop peeking
-                MovePowerCardToDiscard();
+                gameManager.MovePowerCardToDiscard();
                 gameManager.peeking = false;
                 // Flip the peeked card back over
                 gameManager.peekedCard.GetComponent<CardDisplay>().ShowFront(false);
@@ -198,6 +198,8 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private void SwapForComputerCard(GameObject otherCard)
     {
+        UpdateCardsComputerKnows(gameObject, otherCard);
+
         // Swap parents
         Transform thisCardParent = transform.parent;
         Transform otherCardParent = otherCard.transform.parent;
@@ -206,13 +208,47 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
         transform.localPosition = Vector2.zero;
         otherCard.transform.localPosition = Vector2.zero;
-        UpdateCardStatus(gameObject);
-        UpdateCardStatus(otherCard);
+        gameManager.UpdateCardStatus(gameObject);
+        gameManager.UpdateCardStatus(otherCard);
         // Move swap card to discard pile
-        MovePowerCardToDiscard();
+        gameManager.MovePowerCardToDiscard();
         gameManager.swapping = false;
         gameManager.EnableComputerCards(false);
         gameManager.TurnOver();
+    }
+
+    private void UpdateCardsComputerKnows(GameObject thisCard, GameObject otherCard)
+    {
+        // There are a couple scenarios here:
+        // 1. The player swaps a card the computer knows
+        // for a card the computer knows - nothing changes
+        // 2. The player swaps a card the computer knows
+        // for a card the computer doesn't know - switch them
+        // 3. The player swaps a card the computer doesn't know
+        // for a card the computer knows - switch them
+        // 4. The player swaps a card the computer doesn't know
+        // for a card the computer doesn't know - nothing changes
+        if (gameManager.cardsComputerKnows.Contains(thisCard.transform.parent) &&
+            !gameManager.cardsComputerKnows.Contains(otherCard.transform.parent))
+        {
+            gameManager.cardsComputerKnows.Remove(thisCard.transform.parent);
+            gameManager.cardsComputerKnows.Add(otherCard.transform.parent);
+        }
+        else if (!gameManager.cardsComputerKnows.Contains(thisCard.transform.parent) &&
+            gameManager.cardsComputerKnows.Contains(otherCard.transform.parent))
+        {
+            gameManager.cardsComputerKnows.Add(thisCard.transform.parent);
+            gameManager.cardsComputerKnows.Remove(otherCard.transform.parent);
+        }
+        // Afterward, we can just make sure the computer knows its bottom two cards
+        if (!gameManager.cardsComputerKnows.Contains(gameManager.computerField.GetChild(0)))
+        {
+            gameManager.cardsComputerKnows.Add(gameManager.computerField.GetChild(0));
+        }
+        if (!gameManager.cardsComputerKnows.Contains(gameManager.computerField.GetChild(1)))
+        {
+            gameManager.cardsComputerKnows.Add(gameManager.computerField.GetChild(1));
+        }
     }
 
     private bool CanSwapWithComputer(GameObject otherCard)
@@ -243,7 +279,6 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             {
                 gameManager.DrawTwoOver();
                 gameManager.TurnOver();
-                MovePowerCardToDiscard();
             }
             else
             {
@@ -258,6 +293,16 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private void SwapForCard (GameObject otherCard)
     {
+        if (otherCard.GetComponent<CardDisplay>().isInDiscard)
+        {
+            // Computer now knows this player card, since it
+            // came from the discard pile
+            gameManager.cardsComputerKnows.Add(transform.parent);
+        }
+        else if (GetComponent<CardDisplay>().isInDiscard)
+        {
+            gameManager.cardsComputerKnows.Add(otherCard.transform.parent);
+        }
         // Player can either drag the non-player card or the player card
         bool thisCardBelongsToPlayer = GetComponent<CardDisplay>().belongsToPlayer;
         // We're dragging the non-player card
@@ -275,12 +320,11 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (gameManager.drawingTwo)
         {
             gameManager.DrawTwoOver();
-            MovePowerCardToDiscard();
         }
         transform.localPosition = Vector2.zero;
         otherCard.transform.localPosition = Vector2.zero;
-        UpdateCardStatus(gameObject);
-        UpdateCardStatus(otherCard);
+        gameManager.UpdateCardStatus(gameObject);
+        gameManager.UpdateCardStatus(otherCard);
         gameManager.TurnOver();
     }
 
