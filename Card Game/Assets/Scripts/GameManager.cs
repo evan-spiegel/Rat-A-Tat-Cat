@@ -79,13 +79,19 @@ public class GameManager : MonoBehaviour {
 		// the drawn card in the discard pile.
 		// Deactivate it for the start of the next turn
 		endTurnButton.interactable = false;
-		EnablePlayerCards(true);
 		// Only enable discard if top card is not a power card
 		if (!TopDiscard().GetComponent<CardDisplay>().IsPowerCard())
 		{
 			EnableDiscard(true);
+			EnablePlayerCards(true);
+		}
+		else
+		{
+			EnableDiscard(false);
+			EnablePlayerCards(false);
 		}
 		EnableDeck(true);
+		EnableComputerCards(false);
 	}
 
 	void InitializeDeck ()
@@ -119,8 +125,10 @@ public class GameManager : MonoBehaviour {
             }
         }
 
-		// For testing, make the first card the player draws a swap
+		// First card player draws
 		//deck.startingDeck[8] = cardList[12];
+		// First card computer draws
+		//deck.startingDeck[9] = cardList[10];
 
 		deck.currentDeck = deck.startingDeck;
 	}
@@ -311,7 +319,7 @@ public class GameManager : MonoBehaviour {
 		// the computer should take it
 		if (TopDiscard().GetComponent<CardDisplay>().IsLessThanFour())
 		{
-			ComputerTakeFromDiscard();
+			ComputerMakeBestSwap("discard");
 		}
 		else
 		{
@@ -351,12 +359,125 @@ public class GameManager : MonoBehaviour {
 
 	private void ComputerSwapPowerCard()
 	{
-		
+		GameObject highestComputerCard = null;
+		GameObject lowestPlayerCard = null;
+		// For now, swap highest card we know and own for
+		// lowest card we know the player owns
+		List<Transform> cardsComputerKnowsAndOwns = CardsComputerKnowsAndOwns();
+		List<Transform> cardsComputerKnowsPlayerOwns = new List<Transform>();
+		GameObject swap = TopDeck();
+		swap.GetComponent<CardDisplay>().ShowFront(true);
+		swap.transform.SetParent(powerCardTransform);
+		LeanTween.moveLocal(swap, Vector2.zero, 1.0f).setOnComplete(()=>
+		{
+			foreach (Transform cardTransform in cardsComputerKnows)
+			{
+				if (!cardsComputerKnowsAndOwns.Contains(cardTransform))
+				{
+					cardsComputerKnowsPlayerOwns.Add(cardTransform);
+				}
+			}
+			foreach (Transform cardTransform in cardsComputerKnowsAndOwns)
+			{
+				if (highestComputerCard == null ||
+					cardTransform.GetChild(0).GetComponent<CardDisplay>().Value() >
+					highestComputerCard.GetComponent<CardDisplay>().Value())
+				{
+					highestComputerCard = cardTransform.GetChild(0).gameObject;
+				}
+			}
+			if (cardsComputerKnowsPlayerOwns.Count > 0)
+			{
+				foreach (Transform cardTransform in cardsComputerKnowsPlayerOwns)
+				{
+					// We don't want to swap for a power card
+					if (!cardTransform.GetChild(0).GetComponent<CardDisplay>().IsPowerCard())
+					{
+						if (lowestPlayerCard == null ||
+						cardTransform.GetChild(0).GetComponent<CardDisplay>().Value() <
+						lowestPlayerCard.GetComponent<CardDisplay>().Value())
+						{
+							lowestPlayerCard = cardTransform.GetChild(0).gameObject;
+						}
+					}
+				}
+				if (lowestPlayerCard != null)
+				{
+					ComputerSwapPlayer(highestComputerCard, lowestPlayerCard);
+				}
+				else
+				{
+					// If the only cards we know the player to own are power cards,
+					// swap for a random player card we don't know
+					foreach (Transform cardTransform in playerField)
+					{
+						if (!cardsComputerKnowsPlayerOwns.Contains(cardTransform))
+						{
+							ComputerSwapPlayer(highestComputerCard, cardTransform.GetChild(0).gameObject);
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				// If computer doesn't know any of the player's cards,
+				// swap its highest card for a random player card
+				ComputerSwapPlayer(highestComputerCard, playerField.GetChild(0).GetChild(0).gameObject);
+			}
+		});
+	}
+
+	private void ComputerSwapPlayer(GameObject computerCard, GameObject playerCard)
+	{
+		UpdateCardsComputerKnows(computerCard, playerCard);
+		// Swap parents
+		Transform computerCardParent = computerCard.transform.parent;
+		Transform playerCardParent = playerCard.transform.parent;
+		computerCard.transform.SetParent(playerCardParent);
+		playerCard.transform.SetParent(computerCardParent);
+		LeanTween.moveLocal(computerCard, Vector2.zero, 1.0f).setOnComplete(()=>
+		{
+			LeanTween.moveLocal(playerCard, Vector2.zero, 1.0f).setOnComplete(()=>
+			{
+				UpdateCardStatus(computerCard);
+				UpdateCardStatus(playerCard);
+				// Move swap card to discard pile
+				ComputerMovePowerCardToDiscard();
+				ComputerTurnOver();
+			});
+		});
 	}
 
 	private void ComputerPeek()
 	{
-		
+		GameObject peek = TopDeck();
+		peek.GetComponent<CardDisplay>().ShowFront(true);
+		// Peek randomly at one of the cards we don't know
+		List<Transform> cardsComputerDoesntKnow = CardsComputerDoesntKnow();
+		if (cardsComputerDoesntKnow.Count > 0)
+		{
+			peek.transform.SetParent(powerCardTransform);
+			LeanTween.moveLocal(peek, Vector2.zero, 1.0f).setOnComplete(()=>
+			{
+				Transform peekCardTransform = cardsComputerDoesntKnow[0];
+				cardsComputerKnows.Add(peekCardTransform);
+				GameObject peekCard = peekCardTransform.GetChild(0).gameObject;
+				// Animation to show player which card computer is peeking at
+				LeanTween.scale(peekCard, Vector2.one * 1.3f, 0.5f).setOnComplete(()=>
+				{
+					LeanTween.scale(peekCard, Vector2.one, 0.5f).setOnComplete(()=>
+					{
+						ComputerMovePowerCardToDiscard();
+					});
+				});
+			});
+		}
+		else
+		{
+			// If we know all our cards, just discard the peek
+			ComputerDiscardDrawnCard(peek);
+		}
 	}
 
 	private void ComputerDrawTwo()
@@ -364,6 +485,7 @@ public class GameManager : MonoBehaviour {
 		// Make this 1
 		drawTwoIndex++;
 		GameObject drawTwo = TopDeck();
+		drawTwo.GetComponent<CardDisplay>().ShowFront(true);
 		// - Move draw two card to power card transform
 		// - Swap or discard first card
 		// - If discarded first card, swap or discard second card
@@ -410,7 +532,7 @@ public class GameManager : MonoBehaviour {
 						}
 						if (highestSwappable != null)
 						{
-							ComputerSwap(highestSwappable.GetChild(0).gameObject, "deck");
+							ComputerSwapDeckDiscard(highestSwappable.GetChild(0).gameObject, "deck");
 						}
 						else
 						{
@@ -428,24 +550,26 @@ public class GameManager : MonoBehaviour {
 	private void ComputerDiscardDrawnCard(GameObject drawnCard)
 	{
 		drawnCard.transform.SetParent(discardTransform);
-		LeanTween.moveLocal(drawnCard, Vector2.zero, 1.0f);
-		drawnCard.GetComponent<CardDisplay>().isDrawnCard = false;
-		drawnCard.GetComponent<CardDisplay>().isInDiscard = true;
-		if (computerDrawingTwo)
+		LeanTween.moveLocal(drawnCard, Vector2.zero, 1.0f).setOnComplete(()=>
 		{
-			if (drawTwoIndex >= 2)
+			drawnCard.GetComponent<CardDisplay>().isDrawnCard = false;
+			drawnCard.GetComponent<CardDisplay>().isInDiscard = true;
+			if (computerDrawingTwo)
 			{
-				ComputerDrawTwoOver();
+				if (drawTwoIndex >= 2)
+				{
+					ComputerDrawTwoOver();
+				}
+				else
+				{
+					CreateTopCard();
+				}
 			}
 			else
 			{
-				CreateTopCard();
+				ComputerTurnOver();
 			}
-		}
-		else
-		{
-			ComputerTurnOver();
-		}
+		});
 	}
 
 	private void ComputerTurnOver()
@@ -467,11 +591,6 @@ public class GameManager : MonoBehaviour {
 		});
 	}
 
-	private void ComputerTakeFromDiscard()
-	{
-		ComputerMakeBestSwap("discard");
-	}
-
 	// source should be "deck" or "discard"
 	private void ComputerMakeBestSwap(string source)
 	{
@@ -489,25 +608,25 @@ public class GameManager : MonoBehaviour {
 			if (computerPowerCards.Count > 0)
 			{
 				// Swap for one of the power cards randomly
-				ComputerSwap(computerPowerCards[0].GetChild(0).gameObject, source);
+				ComputerSwapDeckDiscard(computerPowerCards[0].GetChild(0).gameObject, source);
 			}
 			else
 			{
 				// Swap for one of the unknown cards randomly
 				if (CardsComputerKnowsAndOwns().Count < 4)
 				{
-					ComputerSwap(CardsComputerDoesntKnow()[0].GetChild(0).gameObject, source);
+					ComputerSwapDeckDiscard(CardsComputerDoesntKnow()[0].GetChild(0).gameObject, source);
 				}
 				// If computer knows all 4 cards, swap for greatest difference
 				else
 				{
-					ComputerSwap(greatestDifferenceCard.GetChild(0).gameObject, source);
+					ComputerSwapDeckDiscard(greatestDifferenceCard.GetChild(0).gameObject, source);
 				}
 			}
 		}
 		else
 		{
-			ComputerSwap(greatestDifferenceCard.GetChild(0).gameObject, source);
+			ComputerSwapDeckDiscard(greatestDifferenceCard.GetChild(0).gameObject, source);
 		}
 	}
 
@@ -559,7 +678,7 @@ public class GameManager : MonoBehaviour {
 	}
 
 	// source should be "deck" or "discard"
-	private void ComputerSwap(GameObject computerCard, string source)
+	private void ComputerSwapDeckDiscard(GameObject computerCard, string source)
 	{
 		GameObject swapCard = source == "deck"? TopDeck() : TopDiscard();
 		swapCard.transform.SetParent(computerCard.transform.parent);
@@ -573,6 +692,7 @@ public class GameManager : MonoBehaviour {
 		{
 			ComputerDrawTwoOver();
 		}
+		Debug.Log("swapCard.transform.localPosition: " + swapCard.transform.localPosition);
 		// Move the swap card to the computer card location
 		LeanTween.moveLocal(swapCard, Vector2.zero, 1.0f).setOnComplete(()=>
 		{
@@ -617,7 +737,7 @@ public class GameManager : MonoBehaviour {
 		List<Transform> cardsComputerKnowsAndOwns = CardsComputerKnowsAndOwns();
 		foreach(Transform card in computerField)
 		{
-			if (cardsComputerKnowsAndOwns.Contains(card))
+			if (!cardsComputerKnowsAndOwns.Contains(card))
 			{
 				unknownCards.Add(card);
 			}
@@ -662,5 +782,39 @@ public class GameManager : MonoBehaviour {
 			cardD.ShowFront(true);
 		}
 		cardD.isDrawnCard = false;
+	}
+
+	public void UpdateCardsComputerKnows(GameObject thisCard, GameObject otherCard)
+	{
+		// There are a couple scenarios here:
+		// 1. The player swaps a card the computer knows
+		// for a card the computer knows - nothing changes
+		// 2. The player swaps a card the computer knows
+		// for a card the computer doesn't know - switch them
+		// 3. The player swaps a card the computer doesn't know
+		// for a card the computer knows - switch them
+		// 4. The player swaps a card the computer doesn't know
+		// for a card the computer doesn't know - nothing changes
+		if (cardsComputerKnows.Contains(thisCard.transform.parent) &&
+			!cardsComputerKnows.Contains(otherCard.transform.parent))
+		{
+			cardsComputerKnows.Remove(thisCard.transform.parent);
+			cardsComputerKnows.Add(otherCard.transform.parent);
+		}
+		else if (!cardsComputerKnows.Contains(thisCard.transform.parent) &&
+			cardsComputerKnows.Contains(otherCard.transform.parent))
+		{
+			cardsComputerKnows.Add(thisCard.transform.parent);
+			cardsComputerKnows.Remove(otherCard.transform.parent);
+		}
+		// Afterward, we can just make sure the computer knows its bottom two cards
+		if (!cardsComputerKnows.Contains(computerField.GetChild(0)))
+		{
+			cardsComputerKnows.Add(computerField.GetChild(0));
+		}
+		if (!cardsComputerKnows.Contains(computerField.GetChild(1)))
+		{
+			cardsComputerKnows.Add(computerField.GetChild(1));
+		}
 	}
 }

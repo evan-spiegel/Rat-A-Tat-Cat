@@ -198,7 +198,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private void SwapForComputerCard(GameObject otherCard)
     {
-        UpdateCardsComputerKnows(gameObject, otherCard);
+        gameManager.UpdateCardsComputerKnows(gameObject, otherCard);
 
         // Swap parents
         Transform thisCardParent = transform.parent;
@@ -215,40 +215,6 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         gameManager.swapping = false;
         gameManager.EnableComputerCards(false);
         gameManager.TurnOver();
-    }
-
-    private void UpdateCardsComputerKnows(GameObject thisCard, GameObject otherCard)
-    {
-        // There are a couple scenarios here:
-        // 1. The player swaps a card the computer knows
-        // for a card the computer knows - nothing changes
-        // 2. The player swaps a card the computer knows
-        // for a card the computer doesn't know - switch them
-        // 3. The player swaps a card the computer doesn't know
-        // for a card the computer knows - switch them
-        // 4. The player swaps a card the computer doesn't know
-        // for a card the computer doesn't know - nothing changes
-        if (gameManager.cardsComputerKnows.Contains(thisCard.transform.parent) &&
-            !gameManager.cardsComputerKnows.Contains(otherCard.transform.parent))
-        {
-            gameManager.cardsComputerKnows.Remove(thisCard.transform.parent);
-            gameManager.cardsComputerKnows.Add(otherCard.transform.parent);
-        }
-        else if (!gameManager.cardsComputerKnows.Contains(thisCard.transform.parent) &&
-            gameManager.cardsComputerKnows.Contains(otherCard.transform.parent))
-        {
-            gameManager.cardsComputerKnows.Add(thisCard.transform.parent);
-            gameManager.cardsComputerKnows.Remove(otherCard.transform.parent);
-        }
-        // Afterward, we can just make sure the computer knows its bottom two cards
-        if (!gameManager.cardsComputerKnows.Contains(gameManager.computerField.GetChild(0)))
-        {
-            gameManager.cardsComputerKnows.Add(gameManager.computerField.GetChild(0));
-        }
-        if (!gameManager.cardsComputerKnows.Contains(gameManager.computerField.GetChild(1)))
-        {
-            gameManager.cardsComputerKnows.Add(gameManager.computerField.GetChild(1));
-        }
     }
 
     private bool CanSwapWithComputer(GameObject otherCard)
