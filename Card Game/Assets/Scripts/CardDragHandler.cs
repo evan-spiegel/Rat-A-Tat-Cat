@@ -184,12 +184,12 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 gameManager.peekedCard = null;
                 gameManager.TurnOver();
             }
+            // Player can choose to discard or play peek card
             else
             {
                 DiscardDrawnCard();
             }
         }
-        // Player can choose to discard or play peek card
         else
         {
             DiscardDrawnCard();
@@ -237,8 +237,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         transform.SetParent(gameManager.discardTransform);
         transform.localPosition = Vector2.zero;
-        GetComponent<CardDisplay>().isDrawnCard = false;
-        GetComponent<CardDisplay>().isInDiscard = true;
+        gameManager.UpdateCardStatus(gameObject);
         if (gameManager.drawingTwo)
         {
             if (gameManager.drawTwoIndex >= 2)

@@ -25,6 +25,9 @@ public class GameManager : MonoBehaviour {
 	// so we'll have to keep track of that
 	public List<Transform> cardsComputerKnows, computerPowerCards;
 
+	// To test LeanTween for computer
+	private GameObject swapCard = null;
+
 	void Start () {
 		cardsComputerKnows = new List<Transform>();
 		endTurnButton.interactable = false;
@@ -693,6 +696,12 @@ public class GameManager : MonoBehaviour {
 			ComputerDrawTwoOver();
 		}
 		Debug.Log("swapCard.transform.localPosition: " + swapCard.transform.localPosition);
+		Debug.Log("source: " + source);
+		if (source == "discard")
+			this.swapCard = swapCard;
+		Debug.Log("swapCard.transform.parent: " + swapCard.transform.parent.name);
+		Debug.Log("swapCard.transform.position: " + swapCard.transform.position);
+		Debug.Log("computerCard.transform.position: " + computerCard.transform.position);
 		// Move the swap card to the computer card location
 		LeanTween.moveLocal(swapCard, Vector2.zero, 1.0f).setOnComplete(()=>
 		{
@@ -708,6 +717,16 @@ public class GameManager : MonoBehaviour {
 				ComputerTurnOver();
 			});
 		});
+	}
+
+	void Update()
+	{
+		if (swapCard != null && swapCard.transform.localPosition != Vector3.zero)
+		{
+			Debug.Log("update");
+			Debug.Log("swapCard.transform.position: " + swapCard.transform.position);
+			Debug.Log("swapCard.transform.localPosition: " + swapCard.transform.localPosition);
+		}
 	}
 
 	private GameObject TopDeck()
