@@ -294,3 +294,4 @@ C:\Users\espie\Documents\GitHub\Rat-A-Tat-Cat\Card Game\obj\Release\Assembly-CSh
 C:\Users\espie\Documents\GitHub\Rat-A-Tat-Cat\Card Game\obj\Release\Assembly-CSharp.csproj.CopyComplete
 C:\Users\espie\Documents\GitHub\Rat-A-Tat-Cat\Card Game\obj\Release\Assembly-CSharp.dll
 C:\Users\espie\Documents\GitHub\Rat-A-Tat-Cat\Card Game\obj\Release\Assembly-CSharp.pdb
+C:\Users\espie\Documents\GitHub\Rat-A-Tat-Cat\Card Game\obj\Release\Assembly-CSharp.csproj.CoreCompileInputs.cache
