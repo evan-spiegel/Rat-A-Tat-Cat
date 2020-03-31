@@ -696,20 +696,17 @@ public class GameManager : MonoBehaviour {
 			ComputerDrawTwoOver();
 		}
 		Debug.Log("swapCard.transform.localPosition: " + swapCard.transform.localPosition);
-		Debug.Log("source: " + source);
 		if (source == "discard")
 			this.swapCard = swapCard;
 		Debug.Log("swapCard.transform.parent: " + swapCard.transform.parent.name);
-		Debug.Log("swapCard.transform.position: " + swapCard.transform.position);
-		Debug.Log("computerCard.transform.position: " + computerCard.transform.position);
 		// Move the swap card to the computer card location
 		LeanTween.moveLocal(swapCard, Vector2.zero, 1.0f).setOnComplete(()=>
 		{
 			// Move the computer card to the discard
-			LeanTween.moveLocal(computerCard.gameObject, Vector2.zero, 1.0f).setOnComplete(()=>
+			LeanTween.moveLocal(computerCard, Vector2.zero, 1.0f).setOnComplete(()=>
 			{
 				UpdateCardStatus(swapCard);
-				UpdateCardStatus(computerCard.gameObject);
+				UpdateCardStatus(computerCard);
 				// Flip new computer card over
 				swapCard.GetComponent<CardDisplay>().ShowFront(false);
 				// Show computer card now that it's in discard
