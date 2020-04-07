@@ -99,7 +99,7 @@ MonoBehaviour:
   m_MinSize: {x: 909, y: 421}
   m_MaxSize: {x: 22004, y: 10021}
   vertical: 0
-  controlID: 55
+  controlID: 132
 --- !u!114 &5
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -145,7 +145,7 @@ MonoBehaviour:
   m_MinSize: {x: 201, y: 421}
   m_MaxSize: {x: 4001, y: 8021}
   vertical: 1
-  controlID: 123
+  controlID: 133
 --- !u!114 &7
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -305,23 +305,23 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 76baffff
-      m_LastClickedID: 0
-      m_ExpandedIDs: 1cfbffff483a0000623a0000843a0000
+      m_SelectedIDs: d0ccffff
+      m_LastClickedID: -13104
+      m_ExpandedIDs: 1cfbffff383a00003c3a0000403a0000443a0000623a00006c3a0000703a00007c3a0000803a00009e3a0000ac3a0000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: 
-        m_OriginalName: 
+        m_Name: Card(Clone)
+        m_OriginalName: Card(Clone)
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
           y: 0
           width: 0
           height: 0
-        m_UserData: 0
+        m_UserData: -12418
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 11
+        m_OriginalEventType: 0
         m_IsRenamingFilename: 0
         m_ClientGUIView: {fileID: 7}
       m_SearchString: 
@@ -636,9 +636,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 431.97028, y: 222.35426, z: -40.44313}
+    m_Target: {x: 408.75, y: 359.125, z: 0}
     speed: 2
-    m_Value: {x: 431.97028, y: 222.35426, z: -40.44313}
+    m_Value: {x: 408.75, y: 359.125, z: 0}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -689,9 +689,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: 0, y: 0, z: 0, w: 1}
   m_Size:
-    m_Target: 247.07999
+    m_Target: 50
     speed: 2
-    m_Value: 247.07999
+    m_Value: 50
   m_Ortho:
     m_Target: 1
     speed: 2

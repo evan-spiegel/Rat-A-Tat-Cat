@@ -19,7 +19,7 @@ public class GameManager : MonoBehaviour {
 	public GameObject draggingOverCard = null, peekedCard = null;
 	public Button endTurnButton;
 	public bool swapping = false, drawingTwo = false, peeking = false;
-	private bool computerDrawingTwo = false;
+	private bool computerDrawingTwo = false, computerTookFirstDrawTwoCard = false;
 	public int drawTwoIndex = 0;
 	// cardsComputerKnows includes cards owned by the computer and the player,
 	// so we'll have to keep track of that
@@ -38,7 +38,7 @@ public class GameManager : MonoBehaviour {
 		InitializeDeck();
 
 		// Comment this out to test power cards
-		//ShuffleDeck();
+		ShuffleDeck();
 
 		Deal("player");
 		Deal("computer");
@@ -135,7 +135,10 @@ public class GameManager : MonoBehaviour {
 		//deck.startingDeck[8] = cardList[0];
 		// First card computer draws
 		// 10 = draw two, 11 = peek, 12 = swap
-		deck.startingDeck[9] = cardList[10];
+		//deck.startingDeck[9] = cardList[10];
+		// Second card computer draws (to test draw two)
+		//deck.startingDeck[10] = cardList[9];
+		//deck.startingDeck[4] = cardList[9];
 
 		deck.currentDeck = deck.startingDeck;
 	}
@@ -353,7 +356,7 @@ public class GameManager : MonoBehaviour {
 		{
 			if (topDeckCD.card.cardType == "draw two")
 			{
-				StartCoroutine(ComputerDrawTwo());
+				StartCoroutine(ComputerStartDrawTwo());
 			}
 			else if (topDeckCD.card.cardType == "peek")
 			{
@@ -371,6 +374,7 @@ public class GameManager : MonoBehaviour {
 		GameObject swap = TopDeck();
 		swap.GetComponent<CardDisplay>().ShowFront(true);
 		swap.transform.SetParent(powerCardTransform);
+		EnablePowerCard(false);
 		LeanTween.moveLocal(swap, Vector2.zero, 1.0f).setOnComplete(() =>
 		{
 			GameObject highestComputerCard = null;
@@ -467,6 +471,7 @@ public class GameManager : MonoBehaviour {
 		if (cardsComputerDoesntKnow.Count > 0)
 		{
 			peek.transform.SetParent(powerCardTransform);
+			EnablePowerCard(false);
 			LeanTween.moveLocal(peek, Vector2.zero, 1.0f).setOnComplete(() =>
 			{
 				Transform peekCardTransform = cardsComputerDoesntKnow[0];
@@ -485,14 +490,13 @@ public class GameManager : MonoBehaviour {
 		else
 		{
 			// If we know all our cards, just discard the peek
-			ComputerDiscardDrawnCard(peek);
+			StartCoroutine(ComputerDiscardDrawnCard(peek));
 		}
 	}
 
-	private IEnumerator ComputerDrawTwo()
+	private IEnumerator ComputerStartDrawTwo()
 	{
 		computerDrawingTwo = true;
-		drawTwoIndex = 1;
 		GameObject drawTwo = TopDeck();
 		drawTwo.GetComponent<CardDisplay>().ShowFront(true);
 		// - Move draw two card to power card transform
@@ -500,78 +504,106 @@ public class GameManager : MonoBehaviour {
 		// - If discarded first card, swap or discard second card
 		// - Move draw two card to discard
 		drawTwo.transform.SetParent(powerCardTransform);
+		EnablePowerCard(false);
 		LeanTween.moveLocal(drawTwo, Vector2.zero, 1.0f).setOnComplete(() =>
 		{
-			while (drawTwoIndex <= 2)
+			StartCoroutine(ComputerDrawTwo());
+		});
+		yield return null;
+	}
+
+	private IEnumerator ComputerDrawTwo()
+	{
+		computerTookFirstDrawTwoCard = false;
+		StartCoroutine(ComputerDrawTwoFirstCard());
+		yield return new WaitUntil(() => !isLeanTweening);
+		if (!computerTookFirstDrawTwoCard)
+		{
+			StartCoroutine(ComputerDrawTwoSecondCard());
+		}
+		else
+		{
+			StartCoroutine(ComputerDrawTwoOver());
+		}
+
+		yield return null;
+	}
+
+	private IEnumerator ComputerDrawTwoFirstCard()
+	{
+		CreateTopCard();
+		GameObject drawnCard = TopDeck();
+
+		// To keep things simple, only swap first drawn card if it's less than 4
+		if (drawnCard.GetComponent<CardDisplay>().IsLessThanFour())
+		{
+			computerTookFirstDrawTwoCard = true;
+			ComputerMakeBestSwap("deck");
+		}
+		else
+		{
+			// Discard it
+			StartCoroutine(ComputerDiscardDrawnCard(drawnCard));
+		}
+
+		yield return null;
+	}
+
+	private IEnumerator ComputerDrawTwoSecondCard()
+	{
+		CreateTopCard();
+		GameObject drawnCard = TopDeck();
+
+		Transform highestSwappable = null;
+		// If there are any cards we know to be
+		// higher than this one, might as well swap it
+		List<Transform> cardsComputerKnowsAndOwns = CardsComputerKnowsAndOwns();
+		foreach (Transform cardTransform in cardsComputerKnowsAndOwns)
+		{
+			CardDisplay card = cardTransform.GetChild(0).GetComponent<CardDisplay>();
+			if (card.Value() > drawnCard.GetComponent<CardDisplay>().Value())
 			{
-				// To keep things simple, only swap first drawn card if it's less than 4
-				CreateTopCard();
-				GameObject drawnCard = TopDeck();
-				// For testing, computer should discard both cards
-				if (false && drawnCard.GetComponent<CardDisplay>().IsLessThanFour())
+				if (highestSwappable == null ||
+					highestSwappable.GetChild(0).GetComponent<CardDisplay>().Value() <
+					card.Value())
 				{
-					ComputerMakeBestSwap("deck");
-					StartCoroutine(ComputerDrawTwoOver());
-					return;
-				}
-				else
-				{
-					if (drawTwoIndex == 1)
-					{
-						// Discard it
-						computerDiscardingForDrawTwo_1 = true;
-						StartCoroutine(ComputerDiscardDrawnCard(drawnCard));
-					}
-					else
-					{
-						Transform highestSwappable = null;
-						// If there are any cards we know to be
-						// higher than this one, might as well swap it
-						List<Transform> cardsComputerKnowsAndOwns = CardsComputerKnowsAndOwns();
-						foreach (Transform cardTransform in cardsComputerKnowsAndOwns)
-						{
-							CardDisplay card = cardTransform.GetChild(0).GetComponent<CardDisplay>();
-							if (card.Value() > drawnCard.GetComponent<CardDisplay>().Value())
-							{
-								if (highestSwappable == null ||
-									highestSwappable.GetChild(0).GetComponent<CardDisplay>().Value() <
-									card.Value())
-								{
-									highestSwappable = cardTransform;
-								}
-							}
-						}
-						if (false && highestSwappable != null)
-						{
-							StartCoroutine(ComputerSwapDeckDiscard(highestSwappable.GetChild(0).gameObject, "deck"));
-						}
-						else
-						{
-							// Otherwise discard it
-							computerDiscardingForDrawTwo_2 = true;
-							StartCoroutine(ComputerDiscardDrawnCard(drawnCard));
-						}
-					}
-					drawTwoIndex++;
+					highestSwappable = cardTransform;
 				}
 			}
-			StartCoroutine(ComputerDrawTwoOver());
-		});
+		}
+		if (highestSwappable != null)
+		{
+			StartCoroutine(ComputerSwapDeckDiscard(highestSwappable.GetChild(0).gameObject, "deck"));
+		}	
+		else
+		{
+			// Otherwise discard it
+			StartCoroutine(ComputerDiscardDrawnCard(drawnCard));
+		}
+		StartCoroutine(ComputerDrawTwoOver());
+
+		yield return null;
+	}
+
+	private IEnumerator ComputerDrawTwoOver()
+	{
+		computerDrawingTwo = false;
+		drawTwoIndex = 0;
+		yield return new WaitUntil(() => !isLeanTweening);
+		StartCoroutine(ComputerMovePowerCardToDiscard());
+		ComputerTurnOver();
 		yield return null;
 	}
 
 	private IEnumerator ComputerDiscardDrawnCard(GameObject drawnCard)
 	{
-		// Wait until the first discard is complete before starting the second
-		yield return new WaitUntil(() => (!computerDrawingTwo || (computerDrawingTwo && 
-			(drawTwoIndex == 1 || (drawTwoIndex == 2 && !computerDiscardingForDrawTwo_1)))));
 		//yield return new WaitUntil(() => !isLeanTweening);
 		drawnCard.transform.SetParent(discardTransform);
 		drawnCard.GetComponent<CardDisplay>().ShowFront(true);
-		//isLeanTweening = true;
+		isLeanTweening = true;
 		LeanTween.moveLocal(drawnCard, Vector2.zero, 1.0f).setOnComplete(() =>
 		{
-			//isLeanTweening = false;
+			isLeanTweening = false;
 			computerDiscardingForDrawTwo_1 = false;
 			computerDiscardingForDrawTwo_2 = false;
 			drawnCard.GetComponent<CardDisplay>().isDrawnCard = false;
@@ -608,7 +640,7 @@ public class GameManager : MonoBehaviour {
 		GameObject powerCard = powerCardTransform.GetChild(0).gameObject;
 		powerCard.transform.SetParent(discardTransform);
 		// Make sure we're moving cards one at a time
-		yield return new WaitUntil(()=>!isLeanTweening);
+		//yield return new WaitUntil(()=>!isLeanTweening);
 		yield return new WaitUntil(() => !computerDiscardingForDrawTwo_2);
 		LeanTween.moveLocal(powerCard, Vector2.zero, 1.0f).setOnComplete(() =>
 		{
@@ -630,7 +662,12 @@ public class GameManager : MonoBehaviour {
 			greatestDifference = kvp.Key;
 			greatestDifferenceCard = kvp.Value;
 		}
-		if (greatestDifference < 3)
+		// If drawn card is higher than all our known cards, discard it
+		if (greatestDifference < 0 && source == "deck")
+		{
+			StartCoroutine(ComputerDiscardDrawnCard(TopDeck()));
+		}
+		else if (greatestDifference < 3)
 		{
 			if (computerPowerCards.Count > 0)
 			{
@@ -651,6 +688,7 @@ public class GameManager : MonoBehaviour {
 				}
 			}
 		}
+		// If drawn card is smaller by 3 or more, swap for greatest difference card
 		else
 		{
 			StartCoroutine(ComputerSwapDeckDiscard(greatestDifferenceCard.GetChild(0).gameObject, source));
@@ -716,17 +754,12 @@ public class GameManager : MonoBehaviour {
 		{
 			cardsComputerKnows.Add(swapCard.transform.parent);
 		}
-		
-		if (computerDrawingTwo)
-		{
-			StartCoroutine(ComputerDrawTwoOver());
-		}
 		Debug.Log("swapCard.transform.localPosition: " + swapCard.transform.localPosition);
 		if (source == "discard")
 			this.swapCard = swapCard;
 		Debug.Log("swapCard.transform.parent: " + swapCard.transform.parent.name);
-		yield return new WaitUntil(() => !isLeanTweening);
-		yield return new WaitUntil(() => !computerDiscardingForDrawTwo_1);
+		//yield return new WaitUntil(() => !isLeanTweening);
+		//yield return new WaitUntil(() => !computerDiscardingForDrawTwo_1);
 		isLeanTweening = true;
 		// Move the swap card to the computer card location
 		LeanTween.move(swapCard, computerCard.transform.position, 1.0f).setOnComplete(() =>
@@ -751,18 +784,6 @@ public class GameManager : MonoBehaviour {
 		yield return null;
 	}
 
-	void Update()
-	{
-		/*
-		if (swapCard != null && swapCard.transform.localPosition != Vector3.zero)
-		{
-			Debug.Log("update");
-			Debug.Log("swapCard.transform.position: " + swapCard.transform.position);
-			Debug.Log("swapCard.transform.localPosition: " + swapCard.transform.localPosition);
-		}
-		*/
-	}
-
 	private GameObject TopDeck()
 	{
 		return deckTransform.GetChild(0).gameObject;
@@ -774,17 +795,6 @@ public class GameManager : MonoBehaviour {
 		powerCard.transform.SetParent(discardTransform);
 		powerCard.transform.localPosition = Vector2.zero;
 		UpdateCardStatus(powerCard);
-	}
-
-	private IEnumerator ComputerDrawTwoOver()
-	{
-		computerDrawingTwo = false;
-		yield return new WaitUntil(() => !isLeanTweening);
-		yield return new WaitUntil(() => drawTwoIndex == 2 && !computerDiscardingForDrawTwo_2);
-		drawTwoIndex = 0;
-		StartCoroutine(ComputerMovePowerCardToDiscard());
-		ComputerTurnOver();
-		yield return null;
 	}
 
 	private List<Transform> CardsComputerDoesntKnow()
