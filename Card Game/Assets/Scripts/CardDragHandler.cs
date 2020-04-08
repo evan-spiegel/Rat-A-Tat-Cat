@@ -7,14 +7,18 @@ using UnityEngine.EventSystems;
 public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     private GameManager gameManager;
+    private Transform canvas;
+    private Transform originalParent;
 
     void Start()
     {
         gameManager = FindObjectOfType<GameManager>();
+        canvas = FindObjectOfType<Canvas>().transform;
     }
 
     public void OnBeginDrag (PointerEventData eventData)
     {
+        originalParent = transform.parent;
         CardDisplay cardD = GetComponent<CardDisplay>();
         gameManager.draggingCard = true;
         GetComponent<CanvasGroup>().blocksRaycasts = false;
@@ -28,7 +32,6 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             // to show it's completed and the turn is over
             if (cardD.card.cardType == "draw two")
             {
-                transform.SetParent(gameManager.powerCardTransform);
                 // Disable player cards for now since player can't
                 // swap for discard; enable once card is drawn from deck
                 gameManager.EnablePlayerCards(false);
@@ -40,7 +43,6 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             }
             else if (cardD.card.cardType == "swap")
             {
-                transform.SetParent(gameManager.powerCardTransform);
                 // Don't allow player to swap the swap card for one of their own
                 gameManager.EnablePlayerCards(false);
                 gameManager.drawTwoIndex = 0;
@@ -54,7 +56,6 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                     // this should be 1 after increment
                     gameManager.drawTwoIndex++;
                 }
-                transform.SetParent(gameManager.drawnCardTransform);
                 gameManager.EnablePlayerCards(true);
                 // Enable the discard if we are dragging the drawn card
                 // (and it's a number card)
@@ -76,6 +77,8 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             gameManager.EnableDiscard(true);
         }
+        transform.SetParent(canvas);
+        transform.SetAsLastSibling();
     }
 
     public void OnDrag (PointerEventData eventData)
@@ -117,12 +120,14 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             if (cardD.card.cardType == "swap")
             {
                 // Start the swap process
+                transform.SetParent(gameManager.powerCardTransform);
                 gameManager.StartSwap();
             }
             // Check if it's a draw two
             else if (cardD.card.cardType == "draw two")
             {
                 // Start the draw two process
+                transform.SetParent(gameManager.powerCardTransform);
                 gameManager.StartDrawTwo();
             }
             else if (cardD.card.cardType == "peek")
@@ -154,6 +159,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             // We're just dropping the drawn card onto the field for now
             else
             {
+                transform.SetParent(gameManager.drawnCardTransform);
                 // Discard should be disabled if we have already drawn a card from the deck
                 gameManager.EnableDiscard(false);
             }
@@ -166,10 +172,12 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         CardDisplay cardD = GetComponent<CardDisplay>();
         if (cardD.card.cardType == "draw two")
         {
+            transform.SetParent(gameManager.powerCardTransform);
             gameManager.StartDrawTwo();
         }
         else if (cardD.card.cardType == "swap")
         {
+            transform.SetParent(gameManager.powerCardTransform);
             gameManager.StartSwap();
         }
         else if (cardD.card.cardType == "peek")
@@ -201,7 +209,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         gameManager.UpdateCardsComputerKnows(gameObject, otherCard);
 
         // Swap parents
-        Transform thisCardParent = transform.parent;
+        Transform thisCardParent = originalParent;
         Transform otherCardParent = otherCard.transform.parent;
         transform.SetParent(otherCardParent);
         otherCard.transform.SetParent(thisCardParent);
@@ -279,7 +287,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         // We're dragging the player card
         else
         {
-            otherCard.transform.SetParent(transform.parent);
+            otherCard.transform.SetParent(originalParent);
             transform.SetParent(gameManager.discardTransform);
         }
         if (gameManager.drawingTwo)

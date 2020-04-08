@@ -305,9 +305,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: d0ccffff
-      m_LastClickedID: -13104
-      m_ExpandedIDs: 1cfbffff383a00003c3a0000403a0000443a0000623a00006c3a0000703a00007c3a0000803a00009e3a0000ac3a0000
+      m_SelectedIDs: b2b5ffff
+      m_LastClickedID: -19022
+      m_ExpandedIDs: 1cfbfffff4ffffff383a00003c3a0000403a0000483a0000623a00006c3a00007c3a0000803a0000843a00009e3a0000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: Card(Clone)
@@ -318,7 +318,7 @@ MonoBehaviour:
           y: 0
           width: 0
           height: 0
-        m_UserData: -12418
+        m_UserData: -19022
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
         m_OriginalEventType: 0
@@ -409,20 +409,20 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scripts
+    - Assets/Prefabs
     m_Globs: []
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Scripts
+  - Assets/Prefabs
   m_LastFoldersGridSize: -1
   m_LastProjectPath: C:\Users\espie\Documents\GitHub\Rat-A-Tat-Cat\Card Game
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 7a3b0000
-    m_LastClickedID: 15226
+    m_SelectedIDs: 763b0000
+    m_LastClickedID: 15222
     m_ExpandedIDs: 000000003e3b0000403b0000423b000000ca9a3b
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -636,9 +636,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 408.75, y: 359.125, z: 0}
+    m_Target: {x: 475.1025, y: 275.4635, z: -4.9030185}
     speed: 2
-    m_Value: {x: 408.75, y: 359.125, z: 0}
+    m_Value: {x: 472.08636, y: 277.03955, z: -4.6813183}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -689,9 +689,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: 0, y: 0, z: 0, w: 1}
   m_Size:
-    m_Target: 50
+    m_Target: 58.785847
     speed: 2
-    m_Value: 50
+    m_Value: 61.55586
   m_Ortho:
     m_Target: 1
     speed: 2
