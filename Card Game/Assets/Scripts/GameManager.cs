@@ -16,7 +16,7 @@ public class GameManager : MonoBehaviour {
 	private int currentDeckIndex = 0;
 	public Transform drawnCardTransform, discardTransform, deckTransform, powerCardTransform;
 	public bool draggingCard = false, draggingOverDiscard = false, draggingOverPowerCard = false;
-	public GameObject draggingOverCard = null, peekedCard = null;
+	public GameObject draggingOverCard = null, peekedCard = null, draggedCard = null;
 	public Button endTurnButton;
 	public bool swapping = false, drawingTwo = false, peeking = false;
 	private bool computerDrawingTwo = false, computerTookFirstDrawTwoCard = false;
@@ -28,6 +28,7 @@ public class GameManager : MonoBehaviour {
 	private bool isLeanTweening = false, computerDiscardingForDrawTwo_1 = false,
 		computerDiscardingForDrawTwo_2 = false;
 	private Transform canvas;
+	public float cardTransformHoverAlpha = 0.75f;
 
 	// To test LeanTween for computer
 	private GameObject swapCard = null;
@@ -182,7 +183,7 @@ public class GameManager : MonoBehaviour {
 	public void EnableDiscard(bool enable)
 	{
 		// Disable (or enable) all cards in discard
-		foreach (Transform card in discardTransform)
+		foreach (Transform card in discardTransform.GetChild(0))
 		{
 			card.GetComponent<Image>().raycastTarget = enable;
 		}
@@ -200,18 +201,18 @@ public class GameManager : MonoBehaviour {
 	public void EnableDrawnCard(bool enable)
 	{
 		// Disable (or enable) the drawn card
-		if (drawnCardTransform.childCount > 0)
+		if (drawnCardTransform.GetChild(0).childCount > 0)
 		{
-			drawnCardTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
+			drawnCardTransform.GetChild(0).GetChild(0).GetComponent<Image>().raycastTarget = enable;
 		}
 	}
 
 	public void EnablePowerCard(bool enable)
 	{
 		// Disable (or enable) the drawn card
-		if (powerCardTransform.childCount > 0)
+		if (powerCardTransform.GetChild(0).childCount > 0)
 		{
-			powerCardTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
+			powerCardTransform.GetChild(0).GetChild(0).GetComponent<Image>().raycastTarget = enable;
 		}
 	}
 
@@ -307,7 +308,8 @@ public class GameManager : MonoBehaviour {
 
 	private GameObject TopDiscard()
 	{
-		return discardTransform.GetChild(discardTransform.childCount - 1).gameObject;
+		return discardTransform.GetChild(0).GetChild(
+			discardTransform.GetChild(0).childCount - 1).gameObject;
 	}
 
 	void ComputerTurn()
@@ -375,7 +377,7 @@ public class GameManager : MonoBehaviour {
 	{
 		GameObject swap = TopDeck();
 		swap.GetComponent<CardDisplay>().ShowFront(true);
-		swap.transform.SetParent(powerCardTransform);
+		swap.transform.SetParent(powerCardTransform.GetChild(0));
 		EnablePowerCard(false);
 		LeanTween.moveLocal(swap, Vector2.zero, 1.0f).setOnComplete(() =>
 		{
@@ -472,7 +474,7 @@ public class GameManager : MonoBehaviour {
 		List<Transform> cardsComputerDoesntKnow = CardsComputerDoesntKnow();
 		if (cardsComputerDoesntKnow.Count > 0)
 		{
-			peek.transform.SetParent(powerCardTransform);
+			peek.transform.SetParent(powerCardTransform.GetChild(0));
 			EnablePowerCard(false);
 			LeanTween.moveLocal(peek, Vector2.zero, 1.0f).setOnComplete(() =>
 			{
@@ -505,7 +507,7 @@ public class GameManager : MonoBehaviour {
 		// - Swap or discard first card
 		// - If discarded first card, swap or discard second card
 		// - Move draw two card to discard
-		drawTwo.transform.SetParent(powerCardTransform);
+		drawTwo.transform.SetParent(powerCardTransform.GetChild(0));
 		EnablePowerCard(false);
 		LeanTween.moveLocal(drawTwo, Vector2.zero, 1.0f).setOnComplete(() =>
 		{
@@ -600,7 +602,7 @@ public class GameManager : MonoBehaviour {
 	private IEnumerator ComputerDiscardDrawnCard(GameObject drawnCard)
 	{
 		//yield return new WaitUntil(() => !isLeanTweening);
-		drawnCard.transform.SetParent(discardTransform);
+		drawnCard.transform.SetParent(discardTransform.GetChild(0));
 		drawnCard.GetComponent<CardDisplay>().ShowFront(true);
 		isLeanTweening = true;
 		LeanTween.moveLocal(drawnCard, Vector2.zero, 1.0f).setOnComplete(() =>
@@ -639,8 +641,8 @@ public class GameManager : MonoBehaviour {
 
 	private IEnumerator ComputerMovePowerCardToDiscard()
 	{
-		GameObject powerCard = powerCardTransform.GetChild(0).gameObject;
-		powerCard.transform.SetParent(discardTransform);
+		GameObject powerCard = powerCardTransform.GetChild(0).GetChild(0).gameObject;
+		powerCard.transform.SetParent(discardTransform.GetChild(0));
 		// Make sure we're moving cards one at a time
 		//yield return new WaitUntil(()=>!isLeanTweening);
 		yield return new WaitUntil(() => !computerDiscardingForDrawTwo_2);
@@ -771,7 +773,7 @@ public class GameManager : MonoBehaviour {
 		swapCard.transform.SetParent(canvas);
 		swapCard.transform.SetAsLastSibling();
 		Transform computerCardParent = computerCard.transform.parent;
-		computerCard.transform.SetParent(discardTransform);
+		computerCard.transform.SetParent(discardTransform.GetChild(0));
 		
 		//Debug.Log("swapCard.transform.localPosition: " + swapCard.transform.localPosition);
 		if (source == "discard")
@@ -816,10 +818,10 @@ public class GameManager : MonoBehaviour {
 	public void MovePowerCardToDiscard()
 	{
 		// Peek is the only power card you move to discard manually
-		GameObject powerCard = powerCardTransform.childCount > 0 ? 
-			powerCardTransform.GetChild(0).gameObject : 
+		GameObject powerCard = powerCardTransform.GetChild(0).childCount > 0 ? 
+			powerCardTransform.GetChild(0).GetChild(0).gameObject : 
 			canvas.GetChild(canvas.childCount - 1).gameObject;
-		powerCard.transform.SetParent(discardTransform);
+		powerCard.transform.SetParent(discardTransform.GetChild(0));
 		powerCard.transform.localPosition = Vector2.zero;
 		UpdateCardStatus(powerCard);
 	}

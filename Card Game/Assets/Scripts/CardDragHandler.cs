@@ -21,6 +21,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         originalParent = transform.parent;
         CardDisplay cardD = GetComponent<CardDisplay>();
         gameManager.draggingCard = true;
+        gameManager.draggedCard = gameObject;
         GetComponent<CanvasGroup>().blocksRaycasts = false;
         // If we are the top card of the deck
         if (transform.parent == gameManager.deckTransform)
@@ -67,13 +68,13 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
         // If we're picking up the drawn card again after
         // dropping it onto the field
-        else if (transform.parent == gameManager.drawnCardTransform)
+        else if (transform.parent == gameManager.drawnCardTransform.GetChild(0))
         {
             gameManager.EnableDiscard(true);
         }
         // If we're dragging the peek card to the discard to
         // show we're done peeking
-        else if (transform.parent == gameManager.powerCardTransform)
+        else if (transform.parent == gameManager.powerCardTransform.GetChild(0))
         {
             gameManager.EnableDiscard(true);
         }
@@ -90,6 +91,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         CardDisplay cardD = GetComponent<CardDisplay>();
         gameManager.draggingCard = false;
+        gameManager.draggedCard = null;
         GetComponent<CanvasGroup>().blocksRaycasts = true;
 
         GameObject otherCard = gameManager.draggingOverCard;
@@ -120,14 +122,14 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             if (cardD.card.cardType == "swap")
             {
                 // Start the swap process
-                transform.SetParent(gameManager.powerCardTransform);
+                transform.SetParent(gameManager.powerCardTransform.GetChild(0));
                 gameManager.StartSwap();
             }
             // Check if it's a draw two
             else if (cardD.card.cardType == "draw two")
             {
                 // Start the draw two process
-                transform.SetParent(gameManager.powerCardTransform);
+                transform.SetParent(gameManager.powerCardTransform.GetChild(0));
                 gameManager.StartDrawTwo();
             }
             else if (cardD.card.cardType == "peek")
@@ -136,7 +138,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 // discard pile, or neither
                 if (gameManager.draggingOverPowerCard)
                 {
-                    transform.SetParent(gameManager.powerCardTransform);
+                    transform.SetParent(gameManager.powerCardTransform.GetChild(0));
                     gameManager.StartPeek();
                 }
                 else if (gameManager.draggingOverDiscard)
@@ -147,7 +149,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 {
                     // Just place peek on the field while player decides whether
                     // to use it or not (by dragging it to power card transform)
-                    transform.SetParent(gameManager.drawnCardTransform);
+                    transform.SetParent(gameManager.drawnCardTransform.GetChild(0));
                     gameManager.EnableDiscard(false);
                 }
             }
@@ -159,7 +161,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             // We're just dropping the drawn card onto the field for now
             else
             {
-                transform.SetParent(gameManager.drawnCardTransform);
+                transform.SetParent(gameManager.drawnCardTransform.GetChild(0));
                 // Discard should be disabled if we have already drawn a card from the deck
                 gameManager.EnableDiscard(false);
             }
@@ -172,12 +174,12 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         CardDisplay cardD = GetComponent<CardDisplay>();
         if (cardD.card.cardType == "draw two")
         {
-            transform.SetParent(gameManager.powerCardTransform);
+            transform.SetParent(gameManager.powerCardTransform.GetChild(0));
             gameManager.StartDrawTwo();
         }
         else if (cardD.card.cardType == "swap")
         {
-            transform.SetParent(gameManager.powerCardTransform);
+            transform.SetParent(gameManager.powerCardTransform.GetChild(0));
             gameManager.StartSwap();
         }
         else if (cardD.card.cardType == "peek")
@@ -243,7 +245,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private void DiscardDrawnCard ()
     {
-        transform.SetParent(gameManager.discardTransform);
+        transform.SetParent(gameManager.discardTransform.GetChild(0));
         transform.localPosition = Vector2.zero;
         gameManager.UpdateCardStatus(gameObject);
         if (gameManager.drawingTwo)
@@ -282,13 +284,13 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (!thisCardBelongsToPlayer)
         {
             transform.SetParent(otherCard.transform.parent);
-            otherCard.transform.SetParent(gameManager.discardTransform);
+            otherCard.transform.SetParent(gameManager.discardTransform.GetChild(0));
         }
         // We're dragging the player card
         else
         {
             otherCard.transform.SetParent(originalParent);
-            transform.SetParent(gameManager.discardTransform);
+            transform.SetParent(gameManager.discardTransform.GetChild(0));
         }
         if (gameManager.drawingTwo)
         {
