@@ -15,6 +15,7 @@ public class DiscardPile : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         startingAlpha = GetComponent<Image>().color.a;
     }
 
+    /*
     public void OnTriggerEnter2D(Collider2D collision)
     {
         if (gameManager.draggingCard)
@@ -36,7 +37,7 @@ public class DiscardPile : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public void OnTriggerExit2D(Collider2D collision)
     {
         gameManager.draggingOverDiscard = false;
-        if (transform.GetChild(0).childCount == 1)
+        if (transform.GetChild(0).childCount == 0)
         {
             Color currentColor = GetComponent<Image>().color;
             Color leaveHoverColor = new Color(currentColor.r, currentColor.g,
@@ -44,10 +45,10 @@ public class DiscardPile : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             GetComponent<Image>().color = leaveHoverColor;
         }
     }
-    
+    */
+
     public void OnPointerEnter(PointerEventData eventData)
     {
-        /*
         if (gameManager.draggingCard)
         {
             gameManager.draggingOverDiscard = true;
@@ -62,20 +63,17 @@ public class DiscardPile : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 GetComponent<Image>().color = hoverColor;
             }
         }
-        */
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        /*
         gameManager.draggingOverDiscard = false;
-        if (transform.GetChild(0).childCount == 1)
+        if (transform.GetChild(0).childCount == 0)
         {
             Color currentColor = GetComponent<Image>().color;
             Color leaveHoverColor = new Color(currentColor.r, currentColor.g,
                 currentColor.b, startingAlpha);
             GetComponent<Image>().color = leaveHoverColor;
         }
-        */
     }
 }

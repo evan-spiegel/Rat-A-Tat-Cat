@@ -33,14 +33,26 @@ public class CardDisplay : MonoBehaviour,
 
 	public void OnPointerEnter(PointerEventData pointerEventData)
 	{
-		// Swapping the drawn card for one of our own
 		if (gameManager.draggingCard)
 		{
-			//HighlightCard ();
 			gameManager.draggingOverCard = gameObject;
 		}
-		HighlightCard ();
+		HighlightCard();
 	}
+
+	/*
+	public void OnTriggerEnter2D(Collider2D collision)
+	{
+		// Swapping the drawn card for one of our own
+		// Make sure it's another card and not a card area
+		if (gameManager.draggingCard && collision.gameObject.GetComponent<CardDisplay>() != null &&
+			gameManager.draggedCard != gameObject)
+		{
+			gameManager.draggingOverCard = gameObject;
+			HighlightCard();
+		}
+	}
+	*/
 
 	void HighlightCard ()
 	{
@@ -58,7 +70,20 @@ public class CardDisplay : MonoBehaviour,
 		gameManager.draggingOverCard = null;
 	}
 
-    internal bool IsPowerCard()
+	/*
+	public void OnTriggerExit2D(Collider2D collision)
+	{
+		if (collision.gameObject.GetComponent<CardDisplay>() != null &&
+			gameManager.draggedCard != gameObject)
+		{
+			// Unhighlight the card
+			transform.localScale = InitialScale;
+			gameManager.draggingOverCard = null;
+		}
+	}
+	*/
+
+	internal bool IsPowerCard()
     {
 		return card.cardType == "draw two" || card.cardType == "peek" || card.cardType == "swap";
     }

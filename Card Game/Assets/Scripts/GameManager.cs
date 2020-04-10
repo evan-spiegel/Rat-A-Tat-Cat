@@ -17,7 +17,7 @@ public class GameManager : MonoBehaviour {
 	public Transform drawnCardTransform, discardTransform, deckTransform, powerCardTransform;
 	public bool draggingCard = false, draggingOverDiscard = false, draggingOverPowerCard = false;
 	public GameObject draggingOverCard = null, peekedCard = null, draggedCard = null;
-	public Button endTurnButton;
+	public Button endTurnButton, callRatButton;
 	public bool swapping = false, drawingTwo = false, peeking = false;
 	private bool computerDrawingTwo = false, computerTookFirstDrawTwoCard = false;
 	public int drawTwoIndex = 0;
@@ -723,7 +723,8 @@ public class GameManager : MonoBehaviour {
 		List<Transform> cards = new List<Transform>();
 		foreach (Transform cardTransform in cardsComputerKnows)
 		{
-			if (cardTransform.GetChild(0).GetComponent<CardDisplay>().belongsToComputer)
+			if (cardTransform.GetChild(0).GetComponent<CardDisplay>() != null &&
+				cardTransform.GetChild(0).GetComponent<CardDisplay>().belongsToComputer)
 			{
 				cards.Add(cardTransform);
 			}
@@ -911,5 +912,18 @@ public class GameManager : MonoBehaviour {
 		{
 			cardsComputerKnows.Add(computerField.GetChild(1));
 		}
+	}
+
+	public void CallRat()
+	{
+		// - Tally up both players' points
+		// - Replace any remaining power cards with cards from the
+		// top of the deck
+		// - Bring up the game over screen, declaring the winner
+		// and showing point totals, as well as "Play Again" and
+		// "Main Menu" buttons
+
+		int playerScore = 0, computerScore = 0;
+		 
 	}
 }
