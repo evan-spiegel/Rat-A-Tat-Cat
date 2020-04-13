@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour {
 
@@ -10,7 +11,8 @@ public class GameManager : MonoBehaviour {
 	public Transform playerField, computerField;
 	public GameObject cardPrefab;
 	public GameObject gameOverPanel;
-	public Text winnerText;
+	private Text winnerText, playerScoreText, computerScoreText;
+	public Text computerCallRatText, playerCallRatText;
 	public Card[] cardList;
 	public Sprite cardBack, swapArtwork;
 	private int currentDeckIndex = 0;
@@ -26,7 +28,8 @@ public class GameManager : MonoBehaviour {
 	public List<Transform> cardsComputerKnows, computerPowerCards;
 	public float cardMoveTime = 1.0f;
 	private bool isLeanTweening = false, computerDiscardingForDrawTwo_1 = false,
-		computerDiscardingForDrawTwo_2 = false;
+		computerDiscardingForDrawTwo_2 = false, swappingPowerCardForCallRat = false,
+		scalingCallRatText = false;
 	private Transform canvas;
 	public float cardTransformHoverAlpha = 0.75f;
 
@@ -34,6 +37,12 @@ public class GameManager : MonoBehaviour {
 	private GameObject swapCard = null;
 
 	void Start() {
+		gameOverPanel.SetActive(false);
+		computerCallRatText.gameObject.SetActive(false);
+		playerCallRatText.gameObject.SetActive(false);
+		winnerText = gameOverPanel.transform.GetChild(0).GetComponent<Text>();
+		playerScoreText = gameOverPanel.transform.GetChild(1).GetComponent<Text>();
+		computerScoreText = gameOverPanel.transform.GetChild(2).GetComponent<Text>();
 		canvas = FindObjectOfType<Canvas>().transform;
 		cardsComputerKnows = new List<Transform>();
 		endTurnButton.interactable = false;
@@ -133,7 +142,18 @@ public class GameManager : MonoBehaviour {
 				i++;
 			}
 		}
-
+		// Player cards
+		// To test power card swapping for calling rat
+		//deck.startingDeck[0] = cardList[12];
+		//deck.startingDeck[1] = cardList[12];
+		//deck.startingDeck[2] = cardList[12];
+		//deck.startingDeck[3] = cardList[12];
+		// Computer cards
+		// To test power card swapping for calling rat
+		//deck.startingDeck[4] = cardList[12];
+		//deck.startingDeck[5] = cardList[12];
+		//deck.startingDeck[6] = cardList[12];
+		//deck.startingDeck[7] = cardList[12];
 		// First card player draws
 		//deck.startingDeck[8] = cardList[12];
 		// First card computer draws
@@ -916,6 +936,11 @@ public class GameManager : MonoBehaviour {
 
 	public void CallRat()
 	{
+		StartCoroutine(CallRatCoroutine());
+	}
+
+	private IEnumerator CallRatCoroutine()
+	{
 		// - Tally up both players' points
 		// - Replace any remaining power cards with cards from the
 		// top of the deck
@@ -923,7 +948,124 @@ public class GameManager : MonoBehaviour {
 		// and showing point totals, as well as "Play Again" and
 		// "Main Menu" buttons
 
+		// Show that we are calling rat
+		scalingCallRatText = true;
+		playerCallRatText.gameObject.SetActive(true);
+		playerCallRatText.transform.localScale = Vector2.zero;
+		LeanTween.scale(playerCallRatText.gameObject, Vector2.one, 1.0f).setOnComplete(() =>
+		{
+			scalingCallRatText = false;
+		});
+		yield return new WaitUntil(() => !scalingCallRatText);
+		// First, flip all the cards over and reveal them
+		foreach(Transform cardTransform in playerField)
+		{
+			cardTransform.GetChild(0).GetComponent<CardDisplay>().ShowFront(true);
+		}
+		foreach (Transform cardTransform in computerField)
+		{
+			cardTransform.GetChild(0).GetComponent<CardDisplay>().ShowFront(true);
+		}
+		// Next, replace computer power cards with cards from the top of the deck
+		// one by one
+		foreach(Transform cardTransform in PowerCards(computerField))
+		{
+			yield return new WaitUntil(() => !swappingPowerCardForCallRat);
+			swappingPowerCardForCallRat = true;
+			StartCoroutine(ReplaceWithTopOfDeck(cardTransform));
+		}
+		// Now do the same for the player's power cards (if there are any)
+		foreach (Transform cardTransform in PowerCards(playerField))
+		{
+			yield return new WaitUntil(() => !swappingPowerCardForCallRat);
+			swappingPowerCardForCallRat = true;
+			StartCoroutine(ReplaceWithTopOfDeck(cardTransform));
+		}
+		yield return new WaitUntil(() => !swappingPowerCardForCallRat);
+		// Next, bring up the game over screen and display the scores,
+		// say who the winner is, and have "Play Again" and "Main Menu" buttons
+		BringUpGameOverScreen();
+		yield return null;
+	}
+
+	private List<Transform> PowerCards(Transform field)
+	{
+		List<Transform> powerCards = new List<Transform>();
+		foreach (Transform cardTransform in field)
+		{
+			if (cardTransform.GetChild(0).GetComponent<CardDisplay>().IsPowerCard())
+			{
+				powerCards.Add(cardTransform);
+			}
+		}
+		return powerCards;
+	}
+
+	private void BringUpGameOverScreen()
+	{
+		gameOverPanel.SetActive(true);
+		// Tally up the scores and find out who the winner is
 		int playerScore = 0, computerScore = 0;
-		 
+		foreach(Transform cardTransform in playerField)
+		{
+			playerScore += cardTransform.GetChild(0).GetComponent<CardDisplay>().Value();
+		}
+		foreach (Transform cardTransform in computerField)
+		{
+			computerScore += cardTransform.GetChild(0).GetComponent<CardDisplay>().Value();
+		}
+		if (playerScore < computerScore)
+		{
+			winnerText.text = "Player Wins!!!";
+		}
+		else if (playerScore > computerScore)
+		{
+			winnerText.text = "Computer Wins!!!";
+		}
+		else
+		{
+			winnerText.text = "It's a Tie!!!";
+		}
+		playerScoreText.text = "Player Score: " + playerScore;
+		computerScoreText.text = "Computer Score: " + computerScore;
+	}
+
+	private IEnumerator ReplaceWithTopOfDeck(Transform cardTransform)
+	{
+		CreateTopCard();
+		GameObject topCard = TopDeck(), swappingOutCard = cardTransform.GetChild(0).gameObject;
+		List<GameObject> powerCardsToDiscard = new List<GameObject>();
+		while (topCard.GetComponent<CardDisplay>().IsPowerCard())
+		{
+			bool moving = true;
+			topCard.GetComponent<CardDisplay>().ShowFront(true);
+			topCard.transform.SetParent(canvas);
+			LeanTween.move(topCard, discardTransform, 1.0f).setOnComplete(() =>
+			{
+				topCard.transform.SetParent(discardTransform);
+				CreateTopCard();
+				topCard = TopDeck();
+				moving = false;
+			});
+			yield return new WaitUntil(()=>!moving);
+		}
+		topCard.GetComponent<CardDisplay>().ShowFront(true);
+		topCard.transform.SetParent(canvas);
+		LeanTween.move(topCard, swappingOutCard.transform.position, 1.0f).setOnComplete(() =>
+		{
+			topCard.transform.SetParent(cardTransform);
+			swappingOutCard.transform.SetParent(canvas);
+			LeanTween.move(swappingOutCard, discardTransform, 1.0f).setOnComplete(() =>
+			{
+				swappingOutCard.transform.SetParent(discardTransform);
+				swappingPowerCardForCallRat = false;
+			});
+		});
+		yield return null;
+	}
+
+	public void PlayAgain()
+	{
+		SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
 	}
 }
