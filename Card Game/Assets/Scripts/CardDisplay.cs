@@ -33,11 +33,14 @@ public class CardDisplay : MonoBehaviour,
 
 	public void OnPointerEnter(PointerEventData pointerEventData)
 	{
-		if (gameManager.draggingCard)
+		if (!gameManager.computerTakingTurn)
 		{
-			gameManager.draggingOverCard = gameObject;
+			if (gameManager.draggingCard)
+			{
+				gameManager.draggingOverCard = gameObject;
+			}
+			HighlightCard();
 		}
-		HighlightCard();
 	}
 
 	/*
@@ -65,9 +68,12 @@ public class CardDisplay : MonoBehaviour,
 
 	public void OnPointerExit(PointerEventData pointerEventData)
 	{
-		// Unhighlight the card
-		transform.localScale = InitialScale;
-		gameManager.draggingOverCard = null;
+		if (!gameManager.computerTakingTurn)
+		{
+			// Unhighlight the card
+			transform.localScale = InitialScale;
+			gameManager.draggingOverCard = null;
+		}
 	}
 
 	/*

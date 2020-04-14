@@ -40,7 +40,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             }
             else if (cardD.card.cardType == "peek")
             {
-                
+                gameManager.EnablePlayerCards(false);
             }
             else if (cardD.card.cardType == "swap")
             {

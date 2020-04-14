@@ -20,7 +20,7 @@ public class GameManager : MonoBehaviour {
 	public bool draggingCard = false, draggingOverDiscard = false, draggingOverPowerCard = false;
 	public GameObject draggingOverCard = null, peekedCard = null, draggedCard = null;
 	public Button endTurnButton, callRatButton;
-	public bool swapping = false, drawingTwo = false, peeking = false;
+	public bool swapping = false, drawingTwo = false, peeking = false, computerTakingTurn = false;
 	private bool computerDrawingTwo = false, computerTookFirstDrawTwoCard = false;
 	public int drawTwoIndex = 0;
 	// cardsComputerKnows includes cards owned by the computer and the player,
@@ -155,7 +155,7 @@ public class GameManager : MonoBehaviour {
 		//deck.startingDeck[6] = cardList[12];
 		//deck.startingDeck[7] = cardList[12];
 		// First card player draws
-		//deck.startingDeck[8] = cardList[12];
+		//deck.startingDeck[8] = cardList[11];
 		// First card computer draws
 		// 10 = draw two, 11 = peek, 12 = swap
 		//deck.startingDeck[9] = cardList[12];
@@ -334,6 +334,7 @@ public class GameManager : MonoBehaviour {
 
 	void ComputerTurn()
 	{
+		computerTakingTurn = true;
 		CreateTopCard();
 		EnablePlayerCards(false);
 		EnableComputerCards(false);
@@ -354,8 +355,8 @@ public class GameManager : MonoBehaviour {
 		if (TopDiscard().GetComponent<CardDisplay>().IsLessThanFour())
 		{
 			// To test computer power cards, make sure computer draws from deck
-			//ComputerMakeBestSwap("discard");
-			ComputerDrawFromDeck();
+			ComputerMakeBestSwap("discard");
+			//ComputerDrawFromDeck();
 		}
 		else
 		{
@@ -471,12 +472,16 @@ public class GameManager : MonoBehaviour {
 		// Swap parents
 		Transform computerCardParent = computerCard.transform.parent;
 		Transform playerCardParent = playerCard.transform.parent;
-		computerCard.transform.SetParent(playerCardParent);
-		playerCard.transform.SetParent(computerCardParent);
-		LeanTween.moveLocal(computerCard, Vector2.zero, 1.0f).setOnComplete(() =>
+		computerCard.transform.SetParent(canvas);
+		computerCard.transform.SetAsLastSibling();
+		LeanTween.move(computerCard, playerCardParent.transform.position, 1.0f).setOnComplete(() =>
 		{
-			LeanTween.moveLocal(playerCard, Vector2.zero, 1.0f).setOnComplete(() =>
+			computerCard.transform.SetParent(playerCardParent);
+			playerCard.transform.SetParent(canvas);
+			playerCard.transform.SetAsLastSibling();
+			LeanTween.move(playerCard, computerCardParent.transform.position, 1.0f).setOnComplete(() =>
 			{
+				playerCard.transform.SetParent(computerCardParent);
 				UpdateCardStatus(computerCard);
 				UpdateCardStatus(playerCard);
 				// Move swap card to discard pile
@@ -653,10 +658,43 @@ public class GameManager : MonoBehaviour {
 
 	private void ComputerTurnOver()
 	{
-		EnablePlayerCards(true);
-		EnableDiscard(true);
-		EnableDeck(true);
-		PlayerTurn();
+		// Computer decides whether to call rat
+		if (CardsComputerKnowsAndOwns().Count == 4 &&
+			ComputerHasNoPowerCards() &&
+			TotalOfComputerCards() < 10)
+		{
+			CallRat("computer");
+		}
+		else
+		{
+			computerTakingTurn = false;
+			EnablePlayerCards(true);
+			EnableDiscard(true);
+			EnableDeck(true);
+			PlayerTurn();
+		}
+	}
+
+	private bool ComputerHasNoPowerCards()
+	{
+		foreach(Transform cardTransform in computerField)
+		{
+			if (cardTransform.GetChild(0).GetComponent<CardDisplay>().IsPowerCard())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private int TotalOfComputerCards()
+	{
+		int total = 0;
+		foreach(Transform cardTransform in computerField)
+		{
+			total += cardTransform.GetChild(0).GetComponent<CardDisplay>().Value();
+		}
+		return total;
 	}
 
 	private IEnumerator ComputerMovePowerCardToDiscard()
@@ -744,7 +782,8 @@ public class GameManager : MonoBehaviour {
 		foreach (Transform cardTransform in cardsComputerKnows)
 		{
 			if (cardTransform.GetChild(0).GetComponent<CardDisplay>() != null &&
-				cardTransform.GetChild(0).GetComponent<CardDisplay>().belongsToComputer)
+				cardTransform.GetChild(0).GetComponent<CardDisplay>().belongsToComputer &&
+				cardTransform.parent == computerField)
 			{
 				cards.Add(cardTransform);
 			}
@@ -790,12 +829,7 @@ public class GameManager : MonoBehaviour {
 	private IEnumerator ComputerSwapDeckDiscard(GameObject computerCard, string source)
 	{
 		GameObject swapCard = source == "deck" ? TopDeck() : TopDiscard();
-		// Make sure moving computer card is above card it is swapping out
-		swapCard.transform.SetParent(canvas);
-		swapCard.transform.SetAsLastSibling();
 		Transform computerCardParent = computerCard.transform.parent;
-		computerCard.transform.SetParent(discardTransform.GetChild(0));
-		
 		//Debug.Log("swapCard.transform.localPosition: " + swapCard.transform.localPosition);
 		if (source == "discard")
 			this.swapCard = swapCard;
@@ -803,8 +837,13 @@ public class GameManager : MonoBehaviour {
 		//yield return new WaitUntil(() => !isLeanTweening);
 		//yield return new WaitUntil(() => !computerDiscardingForDrawTwo_1);
 		isLeanTweening = true;
+		// Make sure moving computer card is above card it is swapping out
+		//swapCard.transform.SetParent(canvas);
+		//swapCard.transform.SetAsLastSibling();
 		// Move the swap card to the computer card location
-		LeanTween.move(swapCard, computerCard.transform.position, 1.0f).setOnComplete(() =>
+		Debug.Log("swapCard.transform.position: " + swapCard.transform.position);
+		Debug.Log("source: " + source);
+		LeanTween.move(swapCard, computerCardParent, 1.0f).setOnComplete(() =>
 		{
 			swapCard.transform.SetParent(computerCardParent);
 			// If we swapped for an unknown card, we now know what that card is
@@ -813,8 +852,12 @@ public class GameManager : MonoBehaviour {
 				cardsComputerKnows.Add(swapCard.transform.parent);
 			}
 			// Move the computer card to the discard
-			LeanTween.moveLocal(computerCard, Vector2.zero, 1.0f).setOnComplete(() =>
+			computerCard.transform.SetParent(canvas);
+			computerCard.transform.SetAsLastSibling();
+			computerCard.GetComponent<CardDisplay>().ShowFront(true);
+			LeanTween.move(computerCard, discardTransform, 1.0f).setOnComplete(() =>
 			{
+				computerCard.transform.SetParent(discardTransform.GetChild(0));
 				UpdateCardStatus(swapCard);
 				UpdateCardStatus(computerCard);
 				// Flip new computer card over
@@ -934,12 +977,13 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 
-	public void CallRat()
+	// player should be "player" or "computer"
+	public void CallRat(string player)
 	{
-		StartCoroutine(CallRatCoroutine());
+		StartCoroutine(CallRatCoroutine(player));
 	}
 
-	private IEnumerator CallRatCoroutine()
+	private IEnumerator CallRatCoroutine(string player)
 	{
 		// - Tally up both players' points
 		// - Replace any remaining power cards with cards from the
@@ -950,9 +994,10 @@ public class GameManager : MonoBehaviour {
 
 		// Show that we are calling rat
 		scalingCallRatText = true;
-		playerCallRatText.gameObject.SetActive(true);
-		playerCallRatText.transform.localScale = Vector2.zero;
-		LeanTween.scale(playerCallRatText.gameObject, Vector2.one, 1.0f).setOnComplete(() =>
+		Text callRatText = player == "player" ? playerCallRatText : computerCallRatText;
+		callRatText.gameObject.SetActive(true);
+		callRatText.transform.localScale = Vector2.zero;
+		LeanTween.scale(callRatText.gameObject, Vector2.one, 1.0f).setOnComplete(() =>
 		{
 			scalingCallRatText = false;
 		});
@@ -982,6 +1027,7 @@ public class GameManager : MonoBehaviour {
 			StartCoroutine(ReplaceWithTopOfDeck(cardTransform));
 		}
 		yield return new WaitUntil(() => !swappingPowerCardForCallRat);
+		callRatText.gameObject.SetActive(false);
 		// Next, bring up the game over screen and display the scores,
 		// say who the winner is, and have "Play Again" and "Main Menu" buttons
 		BringUpGameOverScreen();
@@ -1040,6 +1086,7 @@ public class GameManager : MonoBehaviour {
 			bool moving = true;
 			topCard.GetComponent<CardDisplay>().ShowFront(true);
 			topCard.transform.SetParent(canvas);
+			topCard.transform.SetAsLastSibling();
 			LeanTween.move(topCard, discardTransform, 1.0f).setOnComplete(() =>
 			{
 				topCard.transform.SetParent(discardTransform);
@@ -1051,10 +1098,12 @@ public class GameManager : MonoBehaviour {
 		}
 		topCard.GetComponent<CardDisplay>().ShowFront(true);
 		topCard.transform.SetParent(canvas);
+		topCard.transform.SetAsLastSibling();
 		LeanTween.move(topCard, swappingOutCard.transform.position, 1.0f).setOnComplete(() =>
 		{
 			topCard.transform.SetParent(cardTransform);
 			swappingOutCard.transform.SetParent(canvas);
+			swappingOutCard.transform.SetAsLastSibling();
 			LeanTween.move(swappingOutCard, discardTransform, 1.0f).setOnComplete(() =>
 			{
 				swappingOutCard.transform.SetParent(discardTransform);
