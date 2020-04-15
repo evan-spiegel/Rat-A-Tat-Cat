@@ -66,12 +66,16 @@ public class CardDisplay : MonoBehaviour,
 		);
 	}
 
+	public void UnhighlightCard()
+	{
+		transform.localScale = InitialScale;
+	}
+
 	public void OnPointerExit(PointerEventData pointerEventData)
 	{
 		if (!gameManager.computerTakingTurn)
 		{
-			// Unhighlight the card
-			transform.localScale = InitialScale;
+			UnhighlightCard();
 			gameManager.draggingOverCard = null;
 		}
 	}

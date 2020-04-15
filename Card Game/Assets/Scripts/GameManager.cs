@@ -183,7 +183,9 @@ public class GameManager : MonoBehaviour {
 
 	internal void TurnOver()
 	{
+		MakeSureDiscardsRightSize();
 		endTurnButton.interactable = false;
+		callRatButton.interactable = false;
 		EnablePlayerCards(false);
 		EnableDiscard(false);
 		EnableDeck(false);
@@ -346,6 +348,14 @@ public class GameManager : MonoBehaviour {
 		// - Discard power card at the end and end turn
 		// All computer actions should be animated with LeanTween so player can see what's happening
 		ComputerDrawFromDeckOrDiscard();
+	}
+
+	private void MakeSureDiscardsRightSize()
+	{
+		foreach(Transform cardTransform in discardTransform.GetChild(0))
+		{
+			cardTransform.GetComponent<CardDisplay>().UnhighlightCard();
+		}
 	}
 
 	private void ComputerDrawFromDeckOrDiscard()
@@ -658,6 +668,7 @@ public class GameManager : MonoBehaviour {
 
 	private void ComputerTurnOver()
 	{
+		MakeSureDiscardsRightSize();
 		// Computer decides whether to call rat
 		if (CardsComputerKnowsAndOwns().Count == 4 &&
 			ComputerHasNoPowerCards() &&
@@ -667,6 +678,7 @@ public class GameManager : MonoBehaviour {
 		}
 		else
 		{
+			callRatButton.interactable = true;
 			computerTakingTurn = false;
 			EnablePlayerCards(true);
 			EnableDiscard(true);
@@ -980,6 +992,10 @@ public class GameManager : MonoBehaviour {
 	// player should be "player" or "computer"
 	public void CallRat(string player)
 	{
+		EnablePlayerCards(false);
+		EnableDiscard(false);
+		EnableDeck(false);
+		callRatButton.interactable = false;
 		StartCoroutine(CallRatCoroutine(player));
 	}
 
