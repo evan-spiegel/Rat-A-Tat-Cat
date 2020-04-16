@@ -17,6 +17,7 @@ public class DrawnCardTransform : MonoBehaviour, IPointerEnterHandler, IPointerE
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        /*
         if (gameManager.draggingCard)
         {
             // Light up when dragging a card over it to show we
@@ -26,13 +27,16 @@ public class DrawnCardTransform : MonoBehaviour, IPointerEnterHandler, IPointerE
                 currentColor.b, gameManager.cardTransformHoverAlpha);
             GetComponent<Image>().color = hoverColor;
         }
+        */
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        /*
         Color currentColor = GetComponent<Image>().color;
         Color leaveHoverColor = new Color(currentColor.r, currentColor.g,
             currentColor.b, startingAlpha);
         GetComponent<Image>().color = leaveHoverColor;
+        */
     }
 }

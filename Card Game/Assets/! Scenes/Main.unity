@@ -2186,6 +2186,7 @@ MonoBehaviour:
   gameOverPanel: {fileID: 561656472}
   computerCallRatText: {fileID: 102151320}
   playerCallRatText: {fileID: 925701671}
+  drawnCardText: {fileID: 618834062}
   cardList:
   - {fileID: 11400000, guid: da1b27626a2553541b37e7024f6ff5c5, type: 2}
   - {fileID: 11400000, guid: 6f90719e092a7564591f22555b89cab0, type: 2}
@@ -2433,8 +2434,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1732861033}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: EndTurn
+        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+        m_MethodName: TurnOver
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2778,7 +2779,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9699485, g: 0.5353506, b: 0.9716981, a: 0.39215687}
+  m_Color: {r: 0.9699485, g: 0.5353506, b: 0.9716981, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_OnCullStateChanged:

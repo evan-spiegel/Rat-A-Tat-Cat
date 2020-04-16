@@ -36,16 +36,19 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 // Disable player cards for now since player can't
                 // swap for discard; enable once card is drawn from deck
                 gameManager.EnablePlayerCards(false);
+                gameManager.EnableDiscard(false);
                 gameManager.drawTwoIndex = 0;
             }
             else if (cardD.card.cardType == "peek")
             {
                 gameManager.EnablePlayerCards(false);
+                gameManager.EnableTopTwoPlayerCards(true);
             }
             else if (cardD.card.cardType == "swap")
             {
                 // Don't allow player to swap the swap card for one of their own
                 gameManager.EnablePlayerCards(false);
+                gameManager.EnableDiscard(false);
                 gameManager.drawTwoIndex = 0;
             }
             // It's a number card
@@ -71,6 +74,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         else if (transform.parent == gameManager.drawnCardTransform.GetChild(0))
         {
             gameManager.EnableDiscard(true);
+            gameManager.drawnCardText.gameObject.SetActive(false);
         }
         // If we're dragging the peek card to the discard to
         // show we're done peeking
@@ -115,6 +119,22 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             {
                 SwapForComputerCard(otherCard);
             }
+            // If we are dragging a peek card onto one of our cards in order to peek at it
+            else if (cardD.card.cardType == "peek")
+            {
+                if (!otherCard.GetComponent<CardDisplay>().belongsToPlayer ||
+                    otherCard.transform.parent.tag == "Bottom Card")
+                {
+                    // Snap peek to drawn card area
+                    transform.SetParent(gameManager.drawnCardTransform.GetChild(0));
+                    gameManager.drawnCardText.gameObject.SetActive(true);
+                    gameManager.EnableDiscard(false);
+                }
+                else
+                {
+                    StartCoroutine(DragPeek(otherCard));
+                }
+            }
         }
         else
         {
@@ -150,6 +170,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                     // Just place peek on the field while player decides whether
                     // to use it or not (by dragging it to power card transform)
                     transform.SetParent(gameManager.drawnCardTransform.GetChild(0));
+                    gameManager.drawnCardText.gameObject.SetActive(true);
                     gameManager.EnableDiscard(false);
                 }
             }
@@ -162,11 +183,23 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             else
             {
                 transform.SetParent(gameManager.drawnCardTransform.GetChild(0));
+                gameManager.drawnCardText.gameObject.SetActive(true);
                 // Discard should be disabled if we have already drawn a card from the deck
                 gameManager.EnableDiscard(false);
             }
         }
         transform.localPosition = Vector2.zero;
+    }
+
+    private IEnumerator DragPeek(GameObject otherCard)
+    {
+        otherCard.GetComponent<CardDisplay>().ShowFront(true);
+        transform.SetParent(gameManager.discardTransform.GetChild(0));
+        gameManager.EnableTopTwoPlayerCards(false);
+        yield return new WaitForSeconds(1.0f);
+        otherCard.GetComponent<CardDisplay>().ShowFront(false);
+        gameManager.endTurnButton.interactable = true;
+        yield return null;
     }
 
     private void CheckIfDiscardingPowerCard()
@@ -192,7 +225,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 // Flip the peeked card back over
                 gameManager.peekedCard.GetComponent<CardDisplay>().ShowFront(false);
                 gameManager.peekedCard = null;
-                gameManager.TurnOver();
+                gameManager.endTurnButton.interactable = true;
             }
             // Player can choose to discard or play peek card
             else
@@ -224,7 +257,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         gameManager.MovePowerCardToDiscard();
         gameManager.swapping = false;
         gameManager.EnableComputerCards(false);
-        gameManager.TurnOver();
+        gameManager.endTurnButton.interactable = true;
     }
 
     private bool CanSwapWithComputer(GameObject otherCard)
@@ -253,7 +286,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             if (gameManager.drawTwoIndex >= 2)
             {
                 gameManager.DrawTwoOver();
-                gameManager.TurnOver();
+                gameManager.endTurnButton.interactable = true;
             }
             else
             {
@@ -262,7 +295,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
         else
         {
-            gameManager.TurnOver();
+            gameManager.endTurnButton.interactable = true;
         }
     }
 
@@ -300,15 +333,17 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         otherCard.transform.localPosition = Vector2.zero;
         gameManager.UpdateCardStatus(gameObject);
         gameManager.UpdateCardStatus(otherCard);
-        gameManager.TurnOver();
+        gameManager.endTurnButton.interactable = true;
     }
 
     private bool CanSwapDrawnCard (GameObject otherCard)
     {
         if ((GetComponent<CardDisplay>().belongsToPlayer && 
-            otherCard.GetComponent<CardDisplay>().isDrawnCard) ||
+            otherCard.GetComponent<CardDisplay>().isDrawnCard &&
+            !otherCard.GetComponent<CardDisplay>().IsPowerCard()) ||
             GetComponent<CardDisplay>().isDrawnCard &&
-            otherCard.GetComponent<CardDisplay>().belongsToPlayer)
+            otherCard.GetComponent<CardDisplay>().belongsToPlayer &&
+            !GetComponent<CardDisplay>().IsPowerCard())
         {
             return true;
         }

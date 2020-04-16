@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour {
 	public GameObject cardPrefab;
 	public GameObject gameOverPanel;
 	private Text winnerText, playerScoreText, computerScoreText;
-	public Text computerCallRatText, playerCallRatText;
+	public Text computerCallRatText, playerCallRatText, drawnCardText;
 	public Card[] cardList;
 	public Sprite cardBack, swapArtwork;
 	private int currentDeckIndex = 0;
@@ -37,6 +37,7 @@ public class GameManager : MonoBehaviour {
 	private GameObject swapCard = null;
 
 	void Start() {
+		drawnCardText.gameObject.SetActive(false);
 		gameOverPanel.SetActive(false);
 		computerCallRatText.gameObject.SetActive(false);
 		playerCallRatText.gameObject.SetActive(false);
@@ -181,7 +182,7 @@ public class GameManager : MonoBehaviour {
 		deck.currentDeck = temp;
 	}
 
-	internal void TurnOver()
+	public void TurnOver()
 	{
 		MakeSureDiscardsRightSize();
 		endTurnButton.interactable = false;
@@ -986,6 +987,11 @@ public class GameManager : MonoBehaviour {
 		if (!cardsComputerKnows.Contains(computerField.GetChild(1)))
 		{
 			cardsComputerKnows.Add(computerField.GetChild(1));
+		}
+		// And make sure the canvas is not included
+		if (cardsComputerKnows.Contains(canvas))
+		{
+			cardsComputerKnows.Remove(canvas);
 		}
 	}
 
