@@ -12,8 +12,6 @@ ScriptsOnlyBuild:
     - PowerCardTransform
     Unity.2D.Tilemap.Editor.dll:
     - UnityEditor.Tilemaps.GridPaintingState
-    - UnityEditor.Tilemaps.GridPaletteBrushes
-    - UnityEditor.Tilemaps.GridPalettes
     - UnityEditor.Tilemaps.SceneViewGridManager
     - UnityEditor.Tilemaps.TileDragAndDropManager
     Unity.Rider.Editor.dll:
@@ -661,7 +659,7 @@ ScriptsOnlyBuild:
     className: TimelineAsset
   - hash:
       serializedVersion: 2
-      Hash: 60d96af16bc190551d5ac90018439a8f
+      Hash: 8dcb7962170b177f53add013a8d54f43
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: GameManager
@@ -915,4 +913,4 @@ ScriptsOnlyBuild:
   scenePathNames:
   - Assets/! Scenes/Main.unity
   playerPath: C:/Users/espie/Documents/GitHub/Rat-A-Tat-Cat/Card Game/Builds/Playtesting
-    Build 1/Card Game.exe
+    Build 2/Card Game.exe

@@ -43,6 +43,12 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             {
                 gameManager.EnablePlayerCards(false);
                 gameManager.EnableTopTwoPlayerCards(true);
+                if (gameManager.drawingTwo)
+                {
+                    // If this is the first card drawn for draw two,
+                    // this should be 1 after increment
+                    gameManager.drawTwoIndex++;
+                }
             }
             else if (cardD.card.cardType == "swap")
             {
@@ -193,12 +199,16 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private IEnumerator DragPeek(GameObject otherCard)
     {
+        if (gameManager.drawingTwo)
+        {
+            gameManager.DrawTwoOver();
+        }
         otherCard.GetComponent<CardDisplay>().ShowFront(true);
         transform.SetParent(gameManager.discardTransform.GetChild(0));
         gameManager.EnableTopTwoPlayerCards(false);
-        yield return new WaitForSeconds(1.0f);
+        yield return new WaitForSeconds(gameManager.peekShowTime);
         otherCard.GetComponent<CardDisplay>().ShowFront(false);
-        gameManager.endTurnButton.interactable = true;
+        gameManager.TurnOver();
         yield return null;
     }
 
@@ -225,7 +235,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 // Flip the peeked card back over
                 gameManager.peekedCard.GetComponent<CardDisplay>().ShowFront(false);
                 gameManager.peekedCard = null;
-                gameManager.endTurnButton.interactable = true;
+                gameManager.TurnOver();
             }
             // Player can choose to discard or play peek card
             else
@@ -257,7 +267,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         gameManager.MovePowerCardToDiscard();
         gameManager.swapping = false;
         gameManager.EnableComputerCards(false);
-        gameManager.endTurnButton.interactable = true;
+        gameManager.TurnOver();
     }
 
     private bool CanSwapWithComputer(GameObject otherCard)
@@ -286,7 +296,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             if (gameManager.drawTwoIndex >= 2)
             {
                 gameManager.DrawTwoOver();
-                gameManager.endTurnButton.interactable = true;
+                gameManager.TurnOver();
             }
             else
             {
@@ -295,8 +305,9 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
         else
         {
-            gameManager.endTurnButton.interactable = true;
+            gameManager.TurnOver();
         }
+        gameManager.EnableDiscard(false);
     }
 
     private void SwapForCard (GameObject otherCard)
@@ -317,23 +328,32 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (!thisCardBelongsToPlayer)
         {
             transform.SetParent(otherCard.transform.parent);
-            otherCard.transform.SetParent(gameManager.discardTransform.GetChild(0));
+            //transform.localPosition = Vector2.zero;
+            otherCard.transform.SetParent(canvas);
+            LeanTween.move(otherCard, gameManager.discardTransform, 1.0f).setOnComplete(() =>
+            {
+                otherCard.transform.SetParent(gameManager.discardTransform.GetChild(0));
+                gameManager.TurnOver();
+            });
         }
         // We're dragging the player card
         else
         {
             otherCard.transform.SetParent(originalParent);
-            transform.SetParent(gameManager.discardTransform.GetChild(0));
+            //otherCard.transform.localPosition = Vector2.zero;
+            transform.SetParent(canvas);
+            LeanTween.move(gameObject, gameManager.discardTransform, 1.0f).setOnComplete(() =>
+            {
+                transform.SetParent(gameManager.discardTransform.GetChild(0));
+                gameManager.TurnOver();
+            });
         }
         if (gameManager.drawingTwo)
         {
             gameManager.DrawTwoOver();
         }
-        transform.localPosition = Vector2.zero;
-        otherCard.transform.localPosition = Vector2.zero;
         gameManager.UpdateCardStatus(gameObject);
         gameManager.UpdateCardStatus(otherCard);
-        gameManager.endTurnButton.interactable = true;
     }
 
     private bool CanSwapDrawnCard (GameObject otherCard)

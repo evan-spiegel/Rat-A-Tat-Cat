@@ -32,6 +32,7 @@ public class GameManager : MonoBehaviour {
 		scalingCallRatText = false;
 	private Transform canvas;
 	public float cardTransformHoverAlpha = 0.75f;
+	public float peekShowTime = 2.0f;
 
 	// To test LeanTween for computer
 	private GameObject swapCard = null;
@@ -157,6 +158,7 @@ public class GameManager : MonoBehaviour {
 		//deck.startingDeck[7] = cardList[12];
 		// First card player draws
 		//deck.startingDeck[8] = cardList[11];
+		//deck.startingDeck[9] = cardList[11];
 		// First card computer draws
 		// 10 = draw two, 11 = peek, 12 = swap
 		//deck.startingDeck[9] = cardList[12];
