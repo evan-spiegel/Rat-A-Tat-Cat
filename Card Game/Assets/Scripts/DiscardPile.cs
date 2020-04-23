@@ -53,7 +53,9 @@ public class DiscardPile : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             gameManager.draggingOverDiscard = true;
             // Only needs to light up in nothing in discard
-            if (transform.GetChild(0).childCount == 0)
+            if (transform.GetChild(0).childCount == 0 && 
+                gameManager.draggedCard.GetComponent<CardDisplay>().card.cardType != "draw two" &&
+                gameManager.draggedCard.GetComponent<CardDisplay>().card.cardType != "swap")
             {
                 // Light up when dragging a card over it to show we
                 // can drop it here

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
@@ -37,6 +38,8 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 // swap for discard; enable once card is drawn from deck
                 gameManager.EnablePlayerCards(false);
                 gameManager.EnableDiscard(false);
+                gameManager.powerCardTransform.GetComponent<PowerCardTransform>()
+                    .ShowHighlightColor(true);
                 gameManager.drawTwoIndex = 0;
             }
             else if (cardD.card.cardType == "peek")
@@ -55,6 +58,8 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 // Don't allow player to swap the swap card for one of their own
                 gameManager.EnablePlayerCards(false);
                 gameManager.EnableDiscard(false);
+                gameManager.powerCardTransform.GetComponent<PowerCardTransform>()
+                    .ShowHighlightColor(true);
                 gameManager.drawTwoIndex = 0;
             }
             // It's a number card
@@ -205,10 +210,14 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
         otherCard.GetComponent<CardDisplay>().ShowFront(true);
         transform.SetParent(gameManager.discardTransform.GetChild(0));
+        gameManager.EnableDiscard(false);
         gameManager.EnableTopTwoPlayerCards(false);
-        yield return new WaitForSeconds(gameManager.peekShowTime);
-        otherCard.GetComponent<CardDisplay>().ShowFront(false);
-        gameManager.TurnOver();
+        gameManager.StartCallRatTimer();
+        yield return new WaitForSeconds(gameManager.callRatTimerLength);
+        if (!gameManager.playerHitCallRat)
+        {
+            otherCard.GetComponent<CardDisplay>().ShowFront(false);
+        }
         yield return null;
     }
 
@@ -267,7 +276,6 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         gameManager.MovePowerCardToDiscard();
         gameManager.swapping = false;
         gameManager.EnableComputerCards(false);
-        gameManager.TurnOver();
     }
 
     private bool CanSwapWithComputer(GameObject otherCard)
@@ -296,7 +304,6 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             if (gameManager.drawTwoIndex >= 2)
             {
                 gameManager.DrawTwoOver();
-                gameManager.TurnOver();
             }
             else
             {
@@ -312,6 +319,8 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private void SwapForCard (GameObject otherCard)
     {
+        gameManager.EnableAllCards(false);
+        GetComponent<Image>().raycastTarget = false;
         if (otherCard.GetComponent<CardDisplay>().isInDiscard)
         {
             // Computer now knows this player card, since it
@@ -333,7 +342,14 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             LeanTween.move(otherCard, gameManager.discardTransform, 1.0f).setOnComplete(() =>
             {
                 otherCard.transform.SetParent(gameManager.discardTransform.GetChild(0));
-                gameManager.TurnOver();
+                if (gameManager.drawingTwo)
+                {
+                    gameManager.DrawTwoOver();
+                }
+                else
+                {
+                    gameManager.StartCallRatTimer();
+                }
             });
         }
         // We're dragging the player card
@@ -345,12 +361,15 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             LeanTween.move(gameObject, gameManager.discardTransform, 1.0f).setOnComplete(() =>
             {
                 transform.SetParent(gameManager.discardTransform.GetChild(0));
-                gameManager.TurnOver();
+                if (gameManager.drawingTwo)
+                {
+                    gameManager.DrawTwoOver();
+                }
+                else
+                {
+                    gameManager.StartCallRatTimer();
+                }
             });
-        }
-        if (gameManager.drawingTwo)
-        {
-            gameManager.DrawTwoOver();
         }
         gameManager.UpdateCardStatus(gameObject);
         gameManager.UpdateCardStatus(otherCard);

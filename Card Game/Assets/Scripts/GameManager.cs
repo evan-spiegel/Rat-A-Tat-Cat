@@ -33,11 +33,16 @@ public class GameManager : MonoBehaviour {
 	private Transform canvas;
 	public float cardTransformHoverAlpha = 0.75f;
 	public float peekShowTime = 2.0f;
+	public GameObject callRatTimer;
+	public float callRatTimerLength = 2.0f;
+	private bool callRatTimerCountingDown = false;
+	public bool playerHitCallRat = false;
 
 	// To test LeanTween for computer
 	private GameObject swapCard = null;
 
 	void Start() {
+		callRatTimer.SetActive(false);
 		drawnCardText.gameObject.SetActive(false);
 		gameOverPanel.SetActive(false);
 		computerCallRatText.gameObject.SetActive(false);
@@ -52,7 +57,7 @@ public class GameManager : MonoBehaviour {
 		InitializeDeck();
 
 		// Comment this out to test power cards
-		ShuffleDeck();
+		//ShuffleDeck();
 
 		Deal("player");
 		Deal("computer");
@@ -157,13 +162,14 @@ public class GameManager : MonoBehaviour {
 		//deck.startingDeck[6] = cardList[12];
 		//deck.startingDeck[7] = cardList[12];
 		// First card player draws
-		//deck.startingDeck[8] = cardList[11];
+		deck.startingDeck[8] = cardList[11];
 		//deck.startingDeck[9] = cardList[11];
 		// First card computer draws
 		// 10 = draw two, 11 = peek, 12 = swap
 		//deck.startingDeck[9] = cardList[12];
 		// Second card computer draws (to test draw two)
 		//deck.startingDeck[10] = cardList[9];
+		//deck.startingDeck[11] = cardList[9];
 		//deck.startingDeck[4] = cardList[9];
 
 		deck.currentDeck = deck.startingDeck;
@@ -184,6 +190,7 @@ public class GameManager : MonoBehaviour {
 		deck.currentDeck = temp;
 	}
 
+	// Call this when turn is passed to computer automatically
 	public void TurnOver()
 	{
 		MakeSureDiscardsRightSize();
@@ -193,6 +200,24 @@ public class GameManager : MonoBehaviour {
 		EnableDiscard(false);
 		EnableDeck(false);
 		ComputerTurn();
+	}
+
+	// Call this when player can choose whether to end turn or call rat
+	public void EndOfTurn()
+	{
+		MakeSureDiscardsRightSize();
+		endTurnButton.interactable = true;
+		callRatButton.interactable = true;
+		EnablePlayerCards(false);
+		EnableDiscard(false);
+		EnableDeck(false);
+	}
+
+	public void EnableAllCards(bool enable)
+	{
+		EnablePlayerCards(enable);
+		EnableDiscard(enable);
+		EnableDeck(enable);
 	}
 
 	public void EnablePlayerCards(bool enable)
@@ -288,6 +313,7 @@ public class GameManager : MonoBehaviour {
 
 	internal void StartDrawTwo()
 	{
+		powerCardTransform.GetComponent<PowerCardTransform>().ShowHighlightColor(false);
 		if (drawingTwo)
 			DrawTwoOver();
 		EnableComputerCards(false);
@@ -299,6 +325,7 @@ public class GameManager : MonoBehaviour {
 
 	internal void StartSwap()
 	{
+		powerCardTransform.GetComponent<PowerCardTransform>().ShowHighlightColor(false);
 		if (drawingTwo)
 			DrawTwoOver();
 		EnablePlayerCards(true);
@@ -364,8 +391,11 @@ public class GameManager : MonoBehaviour {
 	private void ComputerDrawFromDeckOrDiscard()
 	{
 		// If there is a zero, one, two, or three on top of the discard pile
-		// the computer should take it
-		if (TopDiscard().GetComponent<CardDisplay>().IsLessThanFour())
+		// the computer should take it, unless the computer knows all of its
+		// cards and they are all three or lower (since the computer doesn't
+		// want to knowingly give the player a three or lower)
+		if (TopDiscard().GetComponent<CardDisplay>().IsLessThanFour() &&
+			(CardsComputerKnowsAndOwns().Count < 4 || !ComputerCardsAllThreeOrLower()))
 		{
 			// To test computer power cards, make sure computer draws from deck
 			ComputerMakeBestSwap("discard");
@@ -375,6 +405,18 @@ public class GameManager : MonoBehaviour {
 		{
 			ComputerDrawFromDeck();
 		}
+	}
+
+	private bool ComputerCardsAllThreeOrLower()
+	{
+		foreach(Transform cardTransform in computerField)
+		{
+			if (!cardTransform.GetChild(0).GetComponent<CardDisplay>().IsLessThanFour())
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private void ComputerDrawFromDeck()
@@ -436,6 +478,13 @@ public class GameManager : MonoBehaviour {
 				{
 					highestComputerCard = cardTransform.GetChild(0).gameObject;
 				}
+			}
+			// Computer should not knowingly give away a low card
+			if (cardsComputerKnowsAndOwns.Count < 4 && 
+				highestComputerCard.GetComponent<CardDisplay>().IsLessThanFour())
+			{
+				// Trade away an unknown card instead
+				highestComputerCard = CardsComputerDoesntKnow()[0].GetChild(0).gameObject;
 			}
 			if (cardsComputerKnowsPlayerOwns.Count > 0)
 			{
@@ -499,7 +548,6 @@ public class GameManager : MonoBehaviour {
 				UpdateCardStatus(playerCard);
 				// Move swap card to discard pile
 				StartCoroutine(ComputerMovePowerCardToDiscard());
-				ComputerTurnOver();
 			});
 		});
 	}
@@ -619,8 +667,19 @@ public class GameManager : MonoBehaviour {
 		}	
 		else
 		{
-			// Otherwise discard it
-			StartCoroutine(ComputerDiscardDrawnCard(drawnCard));
+			// If it is 3 or lower and we have at least one unknown card
+			if (CardsComputerKnowsAndOwns().Count < 4 && 
+				drawnCard.GetComponent<CardDisplay>().IsLessThanFour())
+			{
+				// Swap for an unknown card randomly
+				StartCoroutine(ComputerSwapDeckDiscard(
+					CardsComputerDoesntKnow()[0].GetChild(0).gameObject, "deck"));
+			}
+			else
+			{
+				// Otherwise discard it
+				StartCoroutine(ComputerDiscardDrawnCard(drawnCard));
+			}
 		}
 		StartCoroutine(ComputerDrawTwoOver());
 
@@ -633,7 +692,6 @@ public class GameManager : MonoBehaviour {
 		drawTwoIndex = 0;
 		yield return new WaitUntil(() => !isLeanTweening);
 		StartCoroutine(ComputerMovePowerCardToDiscard());
-		ComputerTurnOver();
 		yield return null;
 	}
 
@@ -741,6 +799,16 @@ public class GameManager : MonoBehaviour {
 			greatestDifferenceCard = kvp.Value;
 		}
 		Debug.Log("Greatest difference: " + greatestDifference);
+		// Don't give player a low card knowingly (unless there is no other choice, in which
+		// case you might as well make the computer's cards better if possible)
+		if (greatestDifferenceCard.GetChild(0).GetComponent<CardDisplay>().IsLessThanFour())
+		{
+			if (CardsComputerKnowsAndOwns().Count < 4)
+			{
+				// Swap for an unknown card randomly
+				greatestDifferenceCard = CardsComputerDoesntKnow()[0];
+			}
+		}
 		// If drawn card is higher than all our known cards, discard it unless it's 3 or lower
 		if (greatestDifference < 0 && source == "deck")
 		{
@@ -767,20 +835,24 @@ public class GameManager : MonoBehaviour {
 			if (computerPowerCards.Count > 0 && swapCard.GetComponent<CardDisplay>().Value() <= 3)
 			{
 				// Swap for one of the power cards randomly
-				StartCoroutine(ComputerSwapDeckDiscard(computerPowerCards[0].GetChild(0).gameObject, source));
+				StartCoroutine(ComputerSwapDeckDiscard(
+					computerPowerCards[0].GetChild(0).gameObject, source));
 			}
 			else
 			{
 				// Swap for one of the unknown cards randomly
 				// Only swap for an unknown card if it's 3 or less
-				if (CardsComputerKnowsAndOwns().Count < 4 && swapCard.GetComponent<CardDisplay>().Value() <= 3)
+				if (CardsComputerKnowsAndOwns().Count < 4 && 
+					swapCard.GetComponent<CardDisplay>().Value() <= 3)
 				{
-					StartCoroutine(ComputerSwapDeckDiscard(CardsComputerDoesntKnow()[0].GetChild(0).gameObject, source));
+					StartCoroutine(ComputerSwapDeckDiscard(
+						CardsComputerDoesntKnow()[0].GetChild(0).gameObject, source));
 				}
 				// If computer knows all 4 cards, swap for greatest difference
 				else
 				{
-					StartCoroutine(ComputerSwapDeckDiscard(greatestDifferenceCard.GetChild(0).gameObject, source));
+					StartCoroutine(ComputerSwapDeckDiscard(
+						greatestDifferenceCard.GetChild(0).gameObject, source));
 				}
 			}
 		}
@@ -900,9 +972,14 @@ public class GameManager : MonoBehaviour {
 		GameObject powerCard = powerCardTransform.GetChild(0).childCount > 0 ? 
 			powerCardTransform.GetChild(0).GetChild(0).gameObject : 
 			canvas.GetChild(canvas.childCount - 1).gameObject;
-		powerCard.transform.SetParent(discardTransform.GetChild(0));
-		powerCard.transform.localPosition = Vector2.zero;
-		UpdateCardStatus(powerCard);
+		powerCard.transform.SetParent(canvas);
+		LeanTween.move(powerCard, discardTransform, 1.0f).setOnComplete(() =>
+		{
+			powerCard.transform.SetParent(discardTransform.GetChild(0));
+			//powerCard.transform.localPosition = Vector2.zero;
+			UpdateCardStatus(powerCard);
+			StartCallRatTimer();
+		});
 	}
 
 	private List<Transform> CardsComputerDoesntKnow()
@@ -997,9 +1074,26 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 
+	public void StartCallRatTimer()
+	{
+		callRatTimerCountingDown = true;
+		callRatTimer.SetActive(true);
+		LeanTween.scaleX(callRatTimer, 0f, callRatTimerLength).setOnComplete(() =>
+		{
+			callRatTimer.transform.localScale = new Vector2(1f, 1f);
+			if (!playerHitCallRat)
+			{
+				callRatTimer.SetActive(false);
+				TurnOver();
+			}
+		});
+	}
+
 	// player should be "player" or "computer"
 	public void CallRat(string player)
 	{
+		callRatTimer.SetActive(false);
+		playerHitCallRat = true;
 		EnablePlayerCards(false);
 		EnableDiscard(false);
 		EnableDeck(false);

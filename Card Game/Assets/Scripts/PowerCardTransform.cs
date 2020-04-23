@@ -8,11 +8,17 @@ public class PowerCardTransform : MonoBehaviour, IPointerEnterHandler, IPointerE
 {
     GameManager gameManager;
     float startingAlpha;
+    Color hoverColor, leaveHoverColor;
 
     void Start()
     {
         gameManager = FindObjectOfType<GameManager>();
         startingAlpha = GetComponent<Image>().color.a;
+        Color currentColor = GetComponent<Image>().color;
+        hoverColor = new Color(currentColor.r, currentColor.g,
+            currentColor.b, gameManager.cardTransformHoverAlpha);
+        leaveHoverColor = new Color(currentColor.r, currentColor.g,
+            currentColor.b, startingAlpha);
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -24,20 +30,24 @@ public class PowerCardTransform : MonoBehaviour, IPointerEnterHandler, IPointerE
             {
                 // Light up when dragging a card over it to show we
                 // can drop it here
-                Color currentColor = GetComponent<Image>().color;
-                Color hoverColor = new Color(currentColor.r, currentColor.g,
-                    currentColor.b, gameManager.cardTransformHoverAlpha);
-                GetComponent<Image>().color = hoverColor;
+                ShowHighlightColor(true);
             }
         }
+    }
+
+    public void ShowHighlightColor(bool show)
+    {
+        GetComponent<Image>().color = show ? hoverColor : leaveHoverColor;
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         gameManager.draggingOverPowerCard = false;
-        Color currentColor = GetComponent<Image>().color;
-        Color leaveHoverColor = new Color(currentColor.r, currentColor.g,
-            currentColor.b, startingAlpha);
-        GetComponent<Image>().color = leaveHoverColor;
+        if (gameManager.draggedCard == null ||
+            (gameManager.draggedCard.GetComponent<CardDisplay>().card.cardType != "draw two" &&
+            gameManager.draggedCard.GetComponent<CardDisplay>().card.cardType != "swap"))
+        {
+            ShowHighlightColor(false);
+        }
     }
 }
