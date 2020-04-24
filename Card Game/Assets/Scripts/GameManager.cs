@@ -57,7 +57,7 @@ public class GameManager : MonoBehaviour {
 		InitializeDeck();
 
 		// Comment this out to test power cards
-		//ShuffleDeck();
+		ShuffleDeck();
 
 		Deal("player");
 		Deal("computer");
@@ -162,7 +162,7 @@ public class GameManager : MonoBehaviour {
 		//deck.startingDeck[6] = cardList[12];
 		//deck.startingDeck[7] = cardList[12];
 		// First card player draws
-		deck.startingDeck[8] = cardList[11];
+		//deck.startingDeck[8] = cardList[11];
 		//deck.startingDeck[9] = cardList[11];
 		// First card computer draws
 		// 10 = draw two, 11 = peek, 12 = swap
@@ -226,7 +226,7 @@ public class GameManager : MonoBehaviour {
 		// after taking action (or enable them for start of next turn)
 		foreach (Transform cardTransform in playerField.transform)
 		{
-			cardTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
+			cardTransform.GetChild(0).GetChild(0).GetComponent<Image>().raycastTarget = enable;
 		}
 	}
 
@@ -271,13 +271,16 @@ public class GameManager : MonoBehaviour {
 		// dealTo should be either "player" or "computer"
 		for (int i = 0; i < 4; i++) {
 			GameObject card = Instantiate(cardPrefab, dealTo == "player" ?
-				playerField.transform.GetChild(i) : computerField.transform.GetChild(i), false);
+				playerField.transform.GetChild(i).GetChild(0) : 
+				computerField.transform.GetChild(i), false);
 			card.GetComponent<CardDisplay>().card =
 				deck.currentDeck[currentDeckIndex + i];
 			if (dealTo == "player")
 			{
 				card.GetComponent<CardDisplay>().belongsToPlayer = true;
 				card.GetComponent<CardDisplay>().belongsToComputer = false;
+				playerField.transform.GetChild(i).GetChild(1).GetComponent<Text>().text =
+					card.GetComponent<CardDisplay>().card.cardType;
 			}
 			// dealTo == "computer"
 			else
@@ -306,7 +309,7 @@ public class GameManager : MonoBehaviour {
 		{
 			if (cardTransform.tag != "Bottom Card")
 			{
-				cardTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
+				cardTransform.GetChild(0).GetChild(0).GetComponent<Image>().raycastTarget = enable;
 			}
 		}
 	}
@@ -340,7 +343,7 @@ public class GameManager : MonoBehaviour {
 		int cardNum = 0;
 		foreach (Transform transform in playerField)
 		{
-			Transform card = transform.GetChild(0);
+			Transform card = transform.GetChild(0).GetChild(0);
 			if (cardNum == 2 || cardNum == 3)
 			{
 				card.gameObject.GetComponent<CardDisplay>().ShowFront(true);
@@ -513,7 +516,8 @@ public class GameManager : MonoBehaviour {
 					{
 						if (!cardsComputerKnowsPlayerOwns.Contains(cardTransform))
 						{
-							ComputerSwapPlayer(highestComputerCard, cardTransform.GetChild(0).gameObject);
+							ComputerSwapPlayer(highestComputerCard, 
+								cardTransform.GetChild(0).GetChild(0).gameObject);
 							break;
 						}
 					}
@@ -523,7 +527,8 @@ public class GameManager : MonoBehaviour {
 			{
 				// If computer doesn't know any of the player's cards,
 				// swap its highest card for a random player card
-				ComputerSwapPlayer(highestComputerCard, playerField.GetChild(0).GetChild(0).gameObject);
+				ComputerSwapPlayer(highestComputerCard, 
+					playerField.GetChild(0).GetChild(0).GetChild(0).gameObject);
 			}
 		});
 	}
@@ -1007,13 +1012,15 @@ public class GameManager : MonoBehaviour {
 	{
 		CardDisplay cardD = card.GetComponent<CardDisplay>();
 		// If we belong to the player
-		if (card.transform.parent.parent == playerField)
+		if (card.transform.parent.parent.parent == playerField)
 		{
+			card.transform.parent.parent.GetChild(1).GetComponent<Text>().text =
+				card.GetComponent<CardDisplay>().card.cardType;
 			cardD.belongsToPlayer = true;
 			cardD.belongsToComputer = false;
 			cardD.isInDiscard = false;
 			// Only show the front of the card if it's in the bottom two
-			cardD.ShowFront(card.transform.parent.tag == "Bottom Card");
+			cardD.ShowFront(card.transform.parent.parent.tag == "Bottom Card");
 		}
 		// If we belong to the computer
 		else if (card.transform.parent.parent == computerField)
@@ -1123,7 +1130,7 @@ public class GameManager : MonoBehaviour {
 		// First, flip all the cards over and reveal them
 		foreach(Transform cardTransform in playerField)
 		{
-			cardTransform.GetChild(0).GetComponent<CardDisplay>().ShowFront(true);
+			cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().ShowFront(true);
 		}
 		foreach (Transform cardTransform in computerField)
 		{
@@ -1142,7 +1149,7 @@ public class GameManager : MonoBehaviour {
 		{
 			yield return new WaitUntil(() => !swappingPowerCardForCallRat);
 			swappingPowerCardForCallRat = true;
-			StartCoroutine(ReplaceWithTopOfDeck(cardTransform));
+			StartCoroutine(ReplaceWithTopOfDeck(cardTransform.GetChild(0)));
 		}
 		yield return new WaitUntil(() => !swappingPowerCardForCallRat);
 		callRatText.gameObject.SetActive(false);
@@ -1157,7 +1164,9 @@ public class GameManager : MonoBehaviour {
 		List<Transform> powerCards = new List<Transform>();
 		foreach (Transform cardTransform in field)
 		{
-			if (cardTransform.GetChild(0).GetComponent<CardDisplay>().IsPowerCard())
+			Transform card = field == playerField ? cardTransform.GetChild(0).GetChild(0) :
+				cardTransform.GetChild(0);
+			if (card.GetComponent<CardDisplay>().IsPowerCard())
 			{
 				powerCards.Add(cardTransform);
 			}
@@ -1172,7 +1181,7 @@ public class GameManager : MonoBehaviour {
 		int playerScore = 0, computerScore = 0;
 		foreach(Transform cardTransform in playerField)
 		{
-			playerScore += cardTransform.GetChild(0).GetComponent<CardDisplay>().Value();
+			playerScore += cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().Value();
 		}
 		foreach (Transform cardTransform in computerField)
 		{

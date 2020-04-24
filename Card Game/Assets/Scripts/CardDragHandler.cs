@@ -339,6 +339,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             transform.SetParent(otherCard.transform.parent);
             //transform.localPosition = Vector2.zero;
             otherCard.transform.SetParent(canvas);
+            otherCard.GetComponent<CardDisplay>().ShowFront(true);
             LeanTween.move(otherCard, gameManager.discardTransform, 1.0f).setOnComplete(() =>
             {
                 otherCard.transform.SetParent(gameManager.discardTransform.GetChild(0));
@@ -350,7 +351,9 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 {
                     gameManager.StartCallRatTimer();
                 }
+                gameManager.UpdateCardStatus(otherCard);
             });
+            gameManager.UpdateCardStatus(gameObject);
         }
         // We're dragging the player card
         else
@@ -358,6 +361,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             otherCard.transform.SetParent(originalParent);
             //otherCard.transform.localPosition = Vector2.zero;
             transform.SetParent(canvas);
+            GetComponent<CardDisplay>().ShowFront(true);
             LeanTween.move(gameObject, gameManager.discardTransform, 1.0f).setOnComplete(() =>
             {
                 transform.SetParent(gameManager.discardTransform.GetChild(0));
@@ -369,10 +373,10 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 {
                     gameManager.StartCallRatTimer();
                 }
+                gameManager.UpdateCardStatus(gameObject);
+                gameManager.UpdateCardStatus(otherCard);
             });
         }
-        gameManager.UpdateCardStatus(gameObject);
-        gameManager.UpdateCardStatus(otherCard);
     }
 
     private bool CanSwapDrawnCard (GameObject otherCard)
