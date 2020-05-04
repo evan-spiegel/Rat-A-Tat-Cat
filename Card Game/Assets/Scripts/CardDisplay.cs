@@ -31,6 +31,20 @@ public class CardDisplay : MonoBehaviour,
 		artworkImage.sprite = show? card.artwork : gameManager.cardBack;
     }
 
+	// Only refers to text attached to card prefab, not text attached to
+	// card transforms
+	public void ShowNumberText(bool show)
+	{
+		transform.GetChild(0).GetComponent<Text>().text = show ?
+			card.cardType : "";
+	}
+
+	public void ShowNumberTextDiscard(bool show)
+	{
+		transform.GetChild(1).GetComponent<Text>().text = show ?
+			card.cardType : "";
+	}
+
 	public void OnPointerEnter(PointerEventData pointerEventData)
 	{
 		if (!gameManager.computerTakingTurn)
@@ -42,20 +56,6 @@ public class CardDisplay : MonoBehaviour,
 			HighlightCard();
 		}
 	}
-
-	/*
-	public void OnTriggerEnter2D(Collider2D collision)
-	{
-		// Swapping the drawn card for one of our own
-		// Make sure it's another card and not a card area
-		if (gameManager.draggingCard && collision.gameObject.GetComponent<CardDisplay>() != null &&
-			gameManager.draggedCard != gameObject)
-		{
-			gameManager.draggingOverCard = gameObject;
-			HighlightCard();
-		}
-	}
-	*/
 
 	void HighlightCard ()
 	{
@@ -79,19 +79,6 @@ public class CardDisplay : MonoBehaviour,
 			gameManager.draggingOverCard = null;
 		}
 	}
-
-	/*
-	public void OnTriggerExit2D(Collider2D collision)
-	{
-		if (collision.gameObject.GetComponent<CardDisplay>() != null &&
-			gameManager.draggedCard != gameObject)
-		{
-			// Unhighlight the card
-			transform.localScale = InitialScale;
-			gameManager.draggingOverCard = null;
-		}
-	}
-	*/
 
 	internal bool IsPowerCard()
     {

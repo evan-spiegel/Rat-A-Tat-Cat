@@ -88,10 +88,12 @@ public class GameManager : MonoBehaviour {
 		if (deckTransform.childCount == 0)
 		{
 			GameObject topCard = Instantiate(cardPrefab, deckTransform, false);
-			topCard.GetComponent<CardDisplay>().card =
-				deck.currentDeck[currentDeckIndex];
-			topCard.GetComponent<CardDisplay>().ShowFront(false);
-			topCard.GetComponent<CardDisplay>().isDrawnCard = false;
+			CardDisplay topCardD = topCard.GetComponent<CardDisplay>();
+			topCardD.card = deck.currentDeck[currentDeckIndex];
+			topCardD.ShowFront(false);
+			topCardD.isDrawnCard = false;
+			topCardD.ShowNumberText(false);
+			topCardD.ShowNumberTextDiscard(false);
 			currentDeckIndex++;
 		}
 	}
@@ -273,21 +275,24 @@ public class GameManager : MonoBehaviour {
 			GameObject card = Instantiate(cardPrefab, dealTo == "player" ?
 				playerField.transform.GetChild(i).GetChild(0) : 
 				computerField.transform.GetChild(i), false);
-			card.GetComponent<CardDisplay>().card =
+			CardDisplay cardD = card.GetComponent<CardDisplay>();
+			cardD.card =
 				deck.currentDeck[currentDeckIndex + i];
 			if (dealTo == "player")
 			{
-				card.GetComponent<CardDisplay>().belongsToPlayer = true;
-				card.GetComponent<CardDisplay>().belongsToComputer = false;
+				cardD.belongsToPlayer = true;
+				cardD.belongsToComputer = false;
 				playerField.transform.GetChild(i).GetChild(1).GetComponent<Text>().text =
-					card.GetComponent<CardDisplay>().card.cardType;
+					cardD.card.cardType;
 			}
 			// dealTo == "computer"
 			else
 			{
-				card.GetComponent<CardDisplay>().belongsToPlayer = false;
-				card.GetComponent<CardDisplay>().belongsToComputer = true;
+				cardD.belongsToPlayer = false;
+				cardD.belongsToComputer = true;
 			}
+			cardD.ShowNumberText(false);
+			cardD.ShowNumberTextDiscard(false);
 		}
 		currentDeckIndex += 4;
 	}
@@ -347,10 +352,13 @@ public class GameManager : MonoBehaviour {
 			if (cardNum == 2 || cardNum == 3)
 			{
 				card.gameObject.GetComponent<CardDisplay>().ShowFront(true);
+				transform.GetChild(1).gameObject.SetActive(true);
 			}
 			else
 			{
 				card.gameObject.GetComponent<CardDisplay>().ShowFront(false);
+				// Hide card number text
+				transform.GetChild(1).gameObject.SetActive(false);
 			}
 			cardNum++;
 		}
@@ -1019,8 +1027,11 @@ public class GameManager : MonoBehaviour {
 			cardD.belongsToPlayer = true;
 			cardD.belongsToComputer = false;
 			cardD.isInDiscard = false;
+			bool isBottomCard = card.transform.parent.parent.tag == "Bottom Card";
 			// Only show the front of the card if it's in the bottom two
-			cardD.ShowFront(card.transform.parent.parent.tag == "Bottom Card");
+			cardD.ShowFront(isBottomCard);
+			cardD.ShowNumberText(false);
+			cardD.ShowNumberTextDiscard(false);
 		}
 		// If we belong to the computer
 		else if (card.transform.parent.parent == computerField)
@@ -1038,6 +1049,15 @@ public class GameManager : MonoBehaviour {
 			cardD.isInDiscard = true;
 			// Show the front of the card if it's in the discard pile
 			cardD.ShowFront(true);
+			cardD.ShowNumberText(false);
+			cardD.ShowNumberTextDiscard(true);
+			int numCardsInDiscard = discardTransform.GetChild(0).childCount;
+			if (numCardsInDiscard > 1)
+			{
+				// Only show number text for top discard
+				discardTransform.GetChild(0).GetChild(numCardsInDiscard - 2)
+					.GetComponent<CardDisplay>().ShowNumberTextDiscard(false);
+			}
 		}
 		cardD.isDrawnCard = false;
 	}

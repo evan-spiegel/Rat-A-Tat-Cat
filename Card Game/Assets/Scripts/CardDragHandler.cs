@@ -27,6 +27,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         // If we are the top card of the deck
         if (transform.parent == gameManager.deckTransform)
         {
+            cardD.ShowNumberText(true);
             // First, check if it's a power card.
             // If it is, don't put it in the discard right away;
             // have it on the field at first before the action
@@ -208,15 +209,20 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             gameManager.DrawTwoOver();
         }
-        otherCard.GetComponent<CardDisplay>().ShowFront(true);
+        CardDisplay otherCardD = otherCard.GetComponent<CardDisplay>();
+        otherCardD.ShowFront(true);
+        // Show number text attached to card transform
+        otherCard.transform.parent.parent.GetChild(1).gameObject.SetActive(true);
         transform.SetParent(gameManager.discardTransform.GetChild(0));
+        gameManager.UpdateCardStatus(gameObject);
         gameManager.EnableDiscard(false);
         gameManager.EnableTopTwoPlayerCards(false);
         gameManager.StartCallRatTimer();
         yield return new WaitForSeconds(gameManager.callRatTimerLength);
         if (!gameManager.playerHitCallRat)
         {
-            otherCard.GetComponent<CardDisplay>().ShowFront(false);
+            otherCardD.ShowFront(false);
+            otherCard.transform.parent.parent.GetChild(1).gameObject.SetActive(false);
         }
         yield return null;
     }
