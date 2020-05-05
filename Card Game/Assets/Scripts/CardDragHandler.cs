@@ -94,6 +94,13 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             gameManager.EnableDiscard(true);
         }
+        // If we're dragging one of the player cards
+        else
+        {
+            // Hide number text attached to card transform
+            transform.parent.parent.GetChild(1).gameObject.SetActive(false);
+            GetComponent<CardDisplay>().ShowNumberText(true);
+        }
         transform.SetParent(canvas);
         transform.SetAsLastSibling();
     }

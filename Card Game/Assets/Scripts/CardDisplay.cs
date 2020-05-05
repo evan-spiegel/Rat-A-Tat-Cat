@@ -43,6 +43,11 @@ public class CardDisplay : MonoBehaviour,
 	{
 		transform.GetChild(1).GetComponent<Text>().text = show ?
 			card.cardType : "";
+		if (gameManager == null)
+		{
+			gameManager = FindObjectOfType<GameManager>();
+		}
+		gameManager.MakeSureOnlyTopDiscardShowsNumber();
 	}
 
 	public void OnPointerEnter(PointerEventData pointerEventData)

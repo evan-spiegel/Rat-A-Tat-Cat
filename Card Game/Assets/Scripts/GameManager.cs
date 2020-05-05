@@ -79,7 +79,7 @@ public class GameManager : MonoBehaviour {
 	{
 		foreach (Transform cardTransform in computerField)
 		{
-			cardTransform.GetChild(0).GetComponent<Image>().raycastTarget = enable;
+			cardTransform.GetChild(0).GetChild(0).GetComponent<Image>().raycastTarget = enable;
 		}
 	}
 
@@ -274,7 +274,7 @@ public class GameManager : MonoBehaviour {
 		for (int i = 0; i < 4; i++) {
 			GameObject card = Instantiate(cardPrefab, dealTo == "player" ?
 				playerField.transform.GetChild(i).GetChild(0) : 
-				computerField.transform.GetChild(i), false);
+				computerField.transform.GetChild(i).GetChild(0), false);
 			CardDisplay cardD = card.GetComponent<CardDisplay>();
 			cardD.card =
 				deck.currentDeck[currentDeckIndex + i];
@@ -290,6 +290,7 @@ public class GameManager : MonoBehaviour {
 			{
 				cardD.belongsToPlayer = false;
 				cardD.belongsToComputer = true;
+				computerField.transform.GetChild(i).GetChild(1).GetComponent<Text>().text = "";
 			}
 			cardD.ShowNumberText(false);
 			cardD.ShowNumberTextDiscard(false);
@@ -364,7 +365,7 @@ public class GameManager : MonoBehaviour {
 		}
 		foreach (Transform transform in computerField)
 		{
-			Transform card = transform.GetChild(0);
+			Transform card = transform.GetChild(0).GetChild(0);
 			card.gameObject.GetComponent<CardDisplay>().ShowFront(false);
 		}
 	}
@@ -373,6 +374,18 @@ public class GameManager : MonoBehaviour {
 	{
 		return discardTransform.GetChild(0).GetChild(
 			discardTransform.GetChild(0).childCount - 1).gameObject;
+	}
+
+	public void MakeSureOnlyTopDiscardShowsNumber()
+	{
+		int numCardsInDiscard = discardTransform.GetChild(0).childCount;
+		if (numCardsInDiscard > 1)
+		{
+			for(int i = 0; i < numCardsInDiscard - 1; i++)
+			{
+				discardTransform.GetChild(0).GetChild(i).GetChild(1).GetComponent<Text>().text = "";
+			}
+		}
 	}
 
 	void ComputerTurn()
@@ -721,6 +734,7 @@ public class GameManager : MonoBehaviour {
 			computerDiscardingForDrawTwo_2 = false;
 			drawnCard.GetComponent<CardDisplay>().isDrawnCard = false;
 			drawnCard.GetComponent<CardDisplay>().isInDiscard = true;
+			drawnCard.GetComponent<CardDisplay>().ShowNumberTextDiscard(true);
 			if (computerDrawingTwo)
 			{
 				if (drawTwoIndex >= 2)
@@ -814,7 +828,7 @@ public class GameManager : MonoBehaviour {
 		Debug.Log("Greatest difference: " + greatestDifference);
 		// Don't give player a low card knowingly (unless there is no other choice, in which
 		// case you might as well make the computer's cards better if possible)
-		if (greatestDifferenceCard.GetChild(0).GetComponent<CardDisplay>().IsLessThanFour())
+		if (greatestDifferenceCard.GetChild(0).GetChild(0).GetComponent<CardDisplay>().IsLessThanFour())
 		{
 			if (CardsComputerKnowsAndOwns().Count < 4)
 			{
@@ -881,8 +895,8 @@ public class GameManager : MonoBehaviour {
 		List<Transform> cards = new List<Transform>();
 		foreach (Transform cardTransform in cardsComputerKnows)
 		{
-			if (cardTransform.GetChild(0).GetComponent<CardDisplay>() != null &&
-				cardTransform.GetChild(0).GetComponent<CardDisplay>().belongsToComputer &&
+			if (cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>() != null &&
+				cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().belongsToComputer &&
 				cardTransform.parent == computerField)
 			{
 				cards.Add(cardTransform);
@@ -906,7 +920,7 @@ public class GameManager : MonoBehaviour {
 		List<Transform> cardsComputerKnowsAndOwns = CardsComputerKnowsAndOwns();
 		foreach (Transform cardTransform in cardsComputerKnowsAndOwns)
 		{
-			int cardValue = cardTransform.GetChild(0).GetComponent<CardDisplay>().Value();
+			int cardValue = cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().Value();
 			// If difference is less than or equal to -10, it's a power card
 			int difference = cardValue - topDiscardValue;
 			// Find the computer's known power card locations
@@ -1051,13 +1065,6 @@ public class GameManager : MonoBehaviour {
 			cardD.ShowFront(true);
 			cardD.ShowNumberText(false);
 			cardD.ShowNumberTextDiscard(true);
-			int numCardsInDiscard = discardTransform.GetChild(0).childCount;
-			if (numCardsInDiscard > 1)
-			{
-				// Only show number text for top discard
-				discardTransform.GetChild(0).GetChild(numCardsInDiscard - 2)
-					.GetComponent<CardDisplay>().ShowNumberTextDiscard(false);
-			}
 		}
 		cardD.isDrawnCard = false;
 	}
