@@ -435,7 +435,7 @@ public class GameManager : MonoBehaviour {
 	{
 		foreach(Transform cardTransform in computerField)
 		{
-			if (!cardTransform.GetChild(0).GetComponent<CardDisplay>().IsLessThanFour())
+			if (!cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().IsLessThanFour())
 			{
 				return false;
 			}
@@ -497,10 +497,10 @@ public class GameManager : MonoBehaviour {
 			foreach (Transform cardTransform in cardsComputerKnowsAndOwns)
 			{
 				if (highestComputerCard == null ||
-					cardTransform.GetChild(0).GetComponent<CardDisplay>().Value() >
+					cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().Value() >
 					highestComputerCard.GetComponent<CardDisplay>().Value())
 				{
-					highestComputerCard = cardTransform.GetChild(0).gameObject;
+					highestComputerCard = cardTransform.GetChild(0).GetChild(0).gameObject;
 				}
 			}
 			// Computer should not knowingly give away a low card
@@ -508,20 +508,20 @@ public class GameManager : MonoBehaviour {
 				highestComputerCard.GetComponent<CardDisplay>().IsLessThanFour())
 			{
 				// Trade away an unknown card instead
-				highestComputerCard = CardsComputerDoesntKnow()[0].GetChild(0).gameObject;
+				highestComputerCard = CardsComputerDoesntKnow()[0].GetChild(0).GetChild(0).gameObject;
 			}
 			if (cardsComputerKnowsPlayerOwns.Count > 0)
 			{
 				foreach (Transform cardTransform in cardsComputerKnowsPlayerOwns)
 				{
 					// We don't want to swap for a power card
-					if (!cardTransform.GetChild(0).GetComponent<CardDisplay>().IsPowerCard())
+					if (!cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().IsPowerCard())
 					{
 						if (lowestPlayerCard == null ||
-						cardTransform.GetChild(0).GetComponent<CardDisplay>().Value() <
+						cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().Value() <
 						lowestPlayerCard.GetComponent<CardDisplay>().Value())
 						{
-							lowestPlayerCard = cardTransform.GetChild(0).gameObject;
+							lowestPlayerCard = cardTransform.GetChild(0).GetChild(0).gameObject;
 						}
 					}
 				}
@@ -676,7 +676,7 @@ public class GameManager : MonoBehaviour {
 		List<Transform> cardsComputerKnowsAndOwns = CardsComputerKnowsAndOwns();
 		foreach (Transform cardTransform in cardsComputerKnowsAndOwns)
 		{
-			CardDisplay card = cardTransform.GetChild(0).GetComponent<CardDisplay>();
+			CardDisplay card = cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>();
 			if (card.Value() > drawnCard.GetComponent<CardDisplay>().Value())
 			{
 				if (highestSwappable == null ||
@@ -689,7 +689,7 @@ public class GameManager : MonoBehaviour {
 		}
 		if (highestSwappable != null)
 		{
-			StartCoroutine(ComputerSwapDeckDiscard(highestSwappable.GetChild(0).gameObject, "deck"));
+			StartCoroutine(ComputerSwapDeckDiscard(highestSwappable.GetChild(0).GetChild(0).gameObject, "deck"));
 		}	
 		else
 		{
@@ -699,7 +699,7 @@ public class GameManager : MonoBehaviour {
 			{
 				// Swap for an unknown card randomly
 				StartCoroutine(ComputerSwapDeckDiscard(
-					CardsComputerDoesntKnow()[0].GetChild(0).gameObject, "deck"));
+					CardsComputerDoesntKnow()[0].GetChild(0).GetChild(0).gameObject, "deck"));
 			}
 			else
 			{
@@ -779,7 +779,7 @@ public class GameManager : MonoBehaviour {
 	{
 		foreach(Transform cardTransform in computerField)
 		{
-			if (cardTransform.GetChild(0).GetComponent<CardDisplay>().IsPowerCard())
+			if (cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().IsPowerCard())
 			{
 				return false;
 			}
@@ -792,7 +792,7 @@ public class GameManager : MonoBehaviour {
 		int total = 0;
 		foreach(Transform cardTransform in computerField)
 		{
-			total += cardTransform.GetChild(0).GetComponent<CardDisplay>().Value();
+			total += cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().Value();
 		}
 		return total;
 	}
@@ -852,7 +852,7 @@ public class GameManager : MonoBehaviour {
 				else
 				{
 					StartCoroutine(ComputerSwapDeckDiscard(CardsComputerDoesntKnow()[0]
-						.GetChild(0).gameObject, source));
+						.GetChild(0).GetChild(0).gameObject, source));
 				}
 			}
 		}
@@ -863,7 +863,7 @@ public class GameManager : MonoBehaviour {
 			{
 				// Swap for one of the power cards randomly
 				StartCoroutine(ComputerSwapDeckDiscard(
-					computerPowerCards[0].GetChild(0).gameObject, source));
+					computerPowerCards[0].GetChild(0).GetChild(0).gameObject, source));
 			}
 			else
 			{
@@ -873,20 +873,20 @@ public class GameManager : MonoBehaviour {
 					swapCard.GetComponent<CardDisplay>().Value() <= 3)
 				{
 					StartCoroutine(ComputerSwapDeckDiscard(
-						CardsComputerDoesntKnow()[0].GetChild(0).gameObject, source));
+						CardsComputerDoesntKnow()[0].GetChild(0).GetChild(0).gameObject, source));
 				}
 				// If computer knows all 4 cards, swap for greatest difference
 				else
 				{
 					StartCoroutine(ComputerSwapDeckDiscard(
-						greatestDifferenceCard.GetChild(0).gameObject, source));
+						greatestDifferenceCard.GetChild(0).GetChild(0).gameObject, source));
 				}
 			}
 		}
 		// If drawn card is smaller by 3 or more, swap for greatest difference card
 		else
 		{
-			StartCoroutine(ComputerSwapDeckDiscard(greatestDifferenceCard.GetChild(0).gameObject, source));
+			StartCoroutine(ComputerSwapDeckDiscard(greatestDifferenceCard.GetChild(0).GetChild(0).gameObject, source));
 		}
 	}
 
@@ -1161,7 +1161,7 @@ public class GameManager : MonoBehaviour {
 		}
 		foreach (Transform cardTransform in computerField)
 		{
-			cardTransform.GetChild(0).GetComponent<CardDisplay>().ShowFront(true);
+			cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().ShowFront(true);
 		}
 		// Next, replace computer power cards with cards from the top of the deck
 		// one by one
@@ -1176,7 +1176,7 @@ public class GameManager : MonoBehaviour {
 		{
 			yield return new WaitUntil(() => !swappingPowerCardForCallRat);
 			swappingPowerCardForCallRat = true;
-			StartCoroutine(ReplaceWithTopOfDeck(cardTransform.GetChild(0)));
+			StartCoroutine(ReplaceWithTopOfDeck(cardTransform.GetChild(0).GetChild(0)));
 		}
 		yield return new WaitUntil(() => !swappingPowerCardForCallRat);
 		callRatText.gameObject.SetActive(false);
@@ -1191,8 +1191,7 @@ public class GameManager : MonoBehaviour {
 		List<Transform> powerCards = new List<Transform>();
 		foreach (Transform cardTransform in field)
 		{
-			Transform card = field == playerField ? cardTransform.GetChild(0).GetChild(0) :
-				cardTransform.GetChild(0);
+			Transform card = cardTransform.GetChild(0).GetChild(0);
 			if (card.GetComponent<CardDisplay>().IsPowerCard())
 			{
 				powerCards.Add(cardTransform);
@@ -1212,7 +1211,7 @@ public class GameManager : MonoBehaviour {
 		}
 		foreach (Transform cardTransform in computerField)
 		{
-			computerScore += cardTransform.GetChild(0).GetComponent<CardDisplay>().Value();
+			computerScore += cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().Value();
 		}
 		if (playerScore < computerScore)
 		{
@@ -1233,7 +1232,8 @@ public class GameManager : MonoBehaviour {
 	private IEnumerator ReplaceWithTopOfDeck(Transform cardTransform)
 	{
 		CreateTopCard();
-		GameObject topCard = TopDeck(), swappingOutCard = cardTransform.GetChild(0).gameObject;
+		GameObject topCard = TopDeck(), 
+			swappingOutCard = cardTransform.GetChild(0).GetChild(0).gameObject;
 		List<GameObject> powerCardsToDiscard = new List<GameObject>();
 		while (topCard.GetComponent<CardDisplay>().IsPowerCard())
 		{

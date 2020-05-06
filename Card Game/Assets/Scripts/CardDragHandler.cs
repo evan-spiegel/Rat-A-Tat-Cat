@@ -24,6 +24,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         gameManager.draggingCard = true;
         gameManager.draggedCard = gameObject;
         GetComponent<CanvasGroup>().blocksRaycasts = false;
+        gameManager.EnableDeck(false);
         // If we are the top card of the deck
         if (transform.parent == gameManager.deckTransform)
         {
@@ -132,6 +133,13 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             {
                 // Check if we're trying to discard a power card
                 CheckIfDiscardingPowerCard();
+            }
+            // If we are dropping the top discard back into the discard
+            else if (cardD.isInDiscard && otherCard.GetComponent<CardDisplay>().isInDiscard)
+            {
+                transform.SetParent(gameManager.discardTransform.GetChild(0));
+                gameManager.EnableDeck(true);
+                GetComponent<CardDisplay>().ShowNumberText(false);
             }
             // If we are swapping one of our cards for one of the computer's cards
             else if (CanSwapWithComputer(otherCard))
@@ -310,7 +318,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private void DiscardDrawnCard ()
     {
         transform.SetParent(gameManager.discardTransform.GetChild(0));
-        transform.localPosition = Vector2.zero;
+        //transform.localPosition = Vector2.zero;
         gameManager.UpdateCardStatus(gameObject);
         if (gameManager.drawingTwo)
         {
