@@ -57,7 +57,7 @@ public class GameManager : MonoBehaviour {
 		InitializeDeck();
 
 		// Comment this out to test power cards
-		ShuffleDeck();
+		//ShuffleDeck();
 
 		Deal("player");
 		Deal("computer");
@@ -164,8 +164,8 @@ public class GameManager : MonoBehaviour {
 		//deck.startingDeck[6] = cardList[12];
 		//deck.startingDeck[7] = cardList[12];
 		// First card player draws
-		//deck.startingDeck[8] = cardList[11];
-		//deck.startingDeck[9] = cardList[11];
+		deck.startingDeck[8] = cardList[10];
+		//deck.startingDeck[9] = cardList[12];
 		// First card computer draws
 		// 10 = draw two, 11 = peek, 12 = swap
 		//deck.startingDeck[9] = cardList[12];
@@ -961,9 +961,9 @@ public class GameManager : MonoBehaviour {
 		{
 			swapCard.transform.SetParent(computerCardParent);
 			// If we swapped for an unknown card, we now know what that card is
-			if (!cardsComputerKnows.Contains(swapCard.transform.parent))
+			if (!cardsComputerKnows.Contains(swapCard.transform.parent.parent))
 			{
-				cardsComputerKnows.Add(swapCard.transform.parent);
+				cardsComputerKnows.Add(swapCard.transform.parent.parent);
 			}
 			// Move the computer card to the discard
 			computerCard.transform.SetParent(canvas);
@@ -1005,7 +1005,10 @@ public class GameManager : MonoBehaviour {
 			powerCard.transform.SetParent(discardTransform.GetChild(0));
 			//powerCard.transform.localPosition = Vector2.zero;
 			UpdateCardStatus(powerCard);
-			StartCallRatTimer();
+			if (!swapping && !drawingTwo && !peeking)
+			{
+				StartCallRatTimer();
+			}
 		});
 	}
 
@@ -1048,7 +1051,7 @@ public class GameManager : MonoBehaviour {
 			cardD.ShowNumberTextDiscard(false);
 		}
 		// If we belong to the computer
-		else if (card.transform.parent.parent == computerField)
+		else if (card.transform.parent.parent.parent == computerField)
 		{
 			cardD.belongsToPlayer = false;
 			cardD.belongsToComputer = true;
@@ -1080,17 +1083,17 @@ public class GameManager : MonoBehaviour {
 		// for a card the computer knows - switch them
 		// 4. The player swaps a card the computer doesn't know
 		// for a card the computer doesn't know - nothing changes
-		if (cardsComputerKnows.Contains(thisCard.transform.parent) &&
-			!cardsComputerKnows.Contains(otherCard.transform.parent))
+		if (cardsComputerKnows.Contains(thisCard.transform.parent.parent) &&
+			!cardsComputerKnows.Contains(otherCard.transform.parent.parent))
 		{
-			cardsComputerKnows.Remove(thisCard.transform.parent);
-			cardsComputerKnows.Add(otherCard.transform.parent);
+			cardsComputerKnows.Remove(thisCard.transform.parent.parent);
+			cardsComputerKnows.Add(otherCard.transform.parent.parent);
 		}
-		else if (!cardsComputerKnows.Contains(thisCard.transform.parent) &&
-			cardsComputerKnows.Contains(otherCard.transform.parent))
+		else if (!cardsComputerKnows.Contains(thisCard.transform.parent.parent) &&
+			cardsComputerKnows.Contains(otherCard.transform.parent.parent))
 		{
-			cardsComputerKnows.Add(thisCard.transform.parent);
-			cardsComputerKnows.Remove(otherCard.transform.parent);
+			cardsComputerKnows.Add(thisCard.transform.parent.parent);
+			cardsComputerKnows.Remove(otherCard.transform.parent.parent);
 		}
 		// Afterward, we can just make sure the computer knows its bottom two cards
 		if (!cardsComputerKnows.Contains(computerField.GetChild(0)))
@@ -1137,6 +1140,14 @@ public class GameManager : MonoBehaviour {
 
 	private IEnumerator CallRatCoroutine(string player)
 	{
+		if (powerCardTransform.GetChild(0).childCount > 0)
+		{
+			Transform powerCard = powerCardTransform.GetChild(0).GetChild(0);
+			powerCard.SetParent(discardTransform.GetChild(0));
+			powerCard.localPosition = Vector2.zero;
+			powerCard.GetComponent<CardDisplay>().ShowNumberText(false);
+			powerCard.GetComponent<CardDisplay>().ShowNumberTextDiscard(true);
+		}
 		// - Tally up both players' points
 		// - Replace any remaining power cards with cards from the
 		// top of the deck
@@ -1158,10 +1169,16 @@ public class GameManager : MonoBehaviour {
 		foreach(Transform cardTransform in playerField)
 		{
 			cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().ShowFront(true);
+			cardTransform.GetChild(1).gameObject.SetActive(true);
+			cardTransform.GetChild(1).GetComponent<Text>().text = 
+				cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().card.cardType;
 		}
 		foreach (Transform cardTransform in computerField)
 		{
 			cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().ShowFront(true);
+			cardTransform.GetChild(1).gameObject.SetActive(true);
+			cardTransform.GetChild(1).GetComponent<Text>().text =
+				cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>().card.cardType;
 		}
 		// Next, replace computer power cards with cards from the top of the deck
 		// one by one

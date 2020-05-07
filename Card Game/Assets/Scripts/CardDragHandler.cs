@@ -95,12 +95,21 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             gameManager.EnableDiscard(true);
         }
+        // If we're dragging from the discard
+        else if (transform.parent == gameManager.discardTransform.GetChild(0))
+        {
+            GetComponent<CardDisplay>().ShowNumberTextDiscard(false);
+            GetComponent<CardDisplay>().ShowNumberText(true);
+        }
         // If we're dragging one of the player cards
         else
         {
             // Hide number text attached to card transform
             transform.parent.parent.GetChild(1).gameObject.SetActive(false);
-            GetComponent<CardDisplay>().ShowNumberText(true);
+            if (transform.parent.parent.tag == "Bottom Card")
+            {
+                GetComponent<CardDisplay>().ShowNumberText(true);
+            }
         }
         transform.SetParent(canvas);
         transform.SetAsLastSibling();
@@ -140,6 +149,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 transform.SetParent(gameManager.discardTransform.GetChild(0));
                 gameManager.EnableDeck(true);
                 GetComponent<CardDisplay>().ShowNumberText(false);
+                GetComponent<CardDisplay>().ShowNumberTextDiscard(true);
             }
             // If we are swapping one of our cards for one of the computer's cards
             else if (CanSwapWithComputer(otherCard))
@@ -209,8 +219,21 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             // We're just dropping the drawn card onto the field for now
             else
             {
-                transform.SetParent(gameManager.drawnCardTransform.GetChild(0));
-                gameManager.drawnCardText.gameObject.SetActive(true);
+                // We're dragging a player card for swap, so it should snap back to
+                // its player card position
+                if (gameManager.swapping)
+                {
+                    transform.SetParent(originalParent);
+                    transform.localPosition = Vector2.zero;
+                    GetComponent<CardDisplay>().ShowNumberText(false);
+                }
+                else
+                {
+                    transform.SetParent(gameManager.drawnCardTransform.GetChild(0));
+                    gameManager.drawnCardText.gameObject.SetActive(true);
+                    gameManager.EnableDrawnCard(true);
+                }
+                
                 // Discard should be disabled if we have already drawn a card from the deck
                 gameManager.EnableDiscard(false);
             }
@@ -281,6 +304,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private void SwapForComputerCard(GameObject otherCard)
     {
+        GetComponent<CardDisplay>().ShowNumberText(false);
         gameManager.UpdateCardsComputerKnows(gameObject, otherCard);
 
         // Swap parents
@@ -346,11 +370,11 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             // Computer now knows this player card, since it
             // came from the discard pile
-            gameManager.cardsComputerKnows.Add(transform.parent);
+            gameManager.cardsComputerKnows.Add(transform.parent.parent);
         }
         else if (GetComponent<CardDisplay>().isInDiscard)
         {
-            gameManager.cardsComputerKnows.Add(otherCard.transform.parent);
+            gameManager.cardsComputerKnows.Add(otherCard.transform.parent.parent);
         }
         // Player can either drag the non-player card or the player card
         bool thisCardBelongsToPlayer = GetComponent<CardDisplay>().belongsToPlayer;
