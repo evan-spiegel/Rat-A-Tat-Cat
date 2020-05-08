@@ -286,7 +286,7 @@ public class CardDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 gameManager.MovePowerCardToDiscard();
                 gameManager.peeking = false;
                 // Flip the peeked card back over
-                gameManager.peekedCard.GetComponent<CardDisplay>().ShowFront(false);
+                gameManager.UpdateCardStatus(gameManager.peekedCard);
                 gameManager.peekedCard = null;
                 gameManager.TurnOver();
             }

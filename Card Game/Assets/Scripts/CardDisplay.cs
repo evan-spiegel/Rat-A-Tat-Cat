@@ -92,10 +92,12 @@ public class CardDisplay : MonoBehaviour,
 
 	public void OnPointerDown(PointerEventData eventData)
 	{
-		if (gameManager.peeking && belongsToPlayer && transform.parent.tag != "Bottom Card")
+		if (gameManager.peeking && belongsToPlayer && transform.parent.parent.tag != "Bottom Card")
 		{
 			// Peek at this card since it's one of our top cards
 			ShowFront(true);
+			Text cardTransformNumberText = transform.parent.parent.GetChild(1).GetComponent<Text>();
+			cardTransformNumberText.gameObject.SetActive(true);
 			// Enable the peek card so that player can drag it to discard
 			// to show they're done peeking and are ending their turn
 			gameManager.EnablePowerCard(true);

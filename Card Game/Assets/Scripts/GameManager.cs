@@ -36,7 +36,7 @@ public class GameManager : MonoBehaviour {
 	public GameObject callRatTimer;
 	public float callRatTimerLength = 2.0f;
 	private bool callRatTimerCountingDown = false;
-	public bool playerHitCallRat = false;
+	public bool playerHitCallRat = false, gameOver = false;
 
 	// To test LeanTween for computer
 	private GameObject swapCard = null;
@@ -53,7 +53,6 @@ public class GameManager : MonoBehaviour {
 		canvas = FindObjectOfType<Canvas>().transform;
 		cardsComputerKnows = new List<Transform>();
 		endTurnButton.interactable = false;
-		//gameOverPanel.SetActive (false);
 		InitializeDeck();
 
 		// Comment this out to test power cards
@@ -164,14 +163,14 @@ public class GameManager : MonoBehaviour {
 		//deck.startingDeck[6] = cardList[12];
 		//deck.startingDeck[7] = cardList[12];
 		// First card player draws
-		deck.startingDeck[8] = cardList[10];
+		deck.startingDeck[8] = cardList[11];
 		//deck.startingDeck[9] = cardList[12];
 		// First card computer draws
 		// 10 = draw two, 11 = peek, 12 = swap
-		//deck.startingDeck[9] = cardList[12];
+		//deck.startingDeck[9] = cardList[10];
 		// Second card computer draws (to test draw two)
 		//deck.startingDeck[10] = cardList[9];
-		//deck.startingDeck[11] = cardList[9];
+		//deck.startingDeck[11] = cardList[0];
 		//deck.startingDeck[4] = cardList[9];
 
 		deck.currentDeck = deck.startingDeck;
@@ -477,6 +476,7 @@ public class GameManager : MonoBehaviour {
 	{
 		GameObject swap = TopDeck();
 		swap.GetComponent<CardDisplay>().ShowFront(true);
+		swap.GetComponent<CardDisplay>().ShowNumberText(true);
 		swap.transform.SetParent(powerCardTransform.GetChild(0));
 		EnablePowerCard(false);
 		LeanTween.moveLocal(swap, Vector2.zero, 1.0f).setOnComplete(() =>
@@ -582,6 +582,7 @@ public class GameManager : MonoBehaviour {
 	{
 		GameObject peek = TopDeck();
 		peek.GetComponent<CardDisplay>().ShowFront(true);
+		peek.GetComponent<CardDisplay>().ShowNumberText(true);
 		// Peek randomly at one of the cards we don't know
 		List<Transform> cardsComputerDoesntKnow = CardsComputerDoesntKnow();
 		if (cardsComputerDoesntKnow.Count > 0)
@@ -615,6 +616,7 @@ public class GameManager : MonoBehaviour {
 		computerDrawingTwo = true;
 		GameObject drawTwo = TopDeck();
 		drawTwo.GetComponent<CardDisplay>().ShowFront(true);
+		drawTwo.GetComponent<CardDisplay>().ShowNumberText(true);
 		// - Move draw two card to power card transform
 		// - Swap or discard first card
 		// - If discarded first card, swap or discard second card
@@ -679,9 +681,8 @@ public class GameManager : MonoBehaviour {
 			CardDisplay card = cardTransform.GetChild(0).GetChild(0).GetComponent<CardDisplay>();
 			if (card.Value() > drawnCard.GetComponent<CardDisplay>().Value())
 			{
-				if (highestSwappable == null ||
-					highestSwappable.GetChild(0).GetComponent<CardDisplay>().Value() <
-					card.Value())
+				if (highestSwappable == null || highestSwappable.GetChild(0).GetChild(0)
+					.GetComponent<CardDisplay>().Value() < card.Value())
 				{
 					highestSwappable = cardTransform;
 				}
@@ -999,17 +1000,29 @@ public class GameManager : MonoBehaviour {
 		GameObject powerCard = powerCardTransform.GetChild(0).childCount > 0 ? 
 			powerCardTransform.GetChild(0).GetChild(0).gameObject : 
 			canvas.GetChild(canvas.childCount - 1).gameObject;
-		powerCard.transform.SetParent(canvas);
-		LeanTween.move(powerCard, discardTransform, 1.0f).setOnComplete(() =>
+		if (powerCard.GetComponent<CardDisplay>().card.cardType == "peek")
 		{
-			powerCard.transform.SetParent(discardTransform.GetChild(0));
-			//powerCard.transform.localPosition = Vector2.zero;
-			UpdateCardStatus(powerCard);
-			if (!swapping && !drawingTwo && !peeking)
+			SnapCardToDiscard(powerCard);
+		}
+		else
+		{
+			powerCard.transform.SetParent(canvas);
+			LeanTween.move(powerCard, discardTransform, 1.0f).setOnComplete(() =>
 			{
-				StartCallRatTimer();
-			}
-		});
+				SnapCardToDiscard(powerCard);
+			});
+		}
+	}
+
+	private void SnapCardToDiscard(GameObject card)
+	{
+		card.transform.SetParent(discardTransform.GetChild(0));
+		card.transform.localPosition = Vector2.zero;
+		UpdateCardStatus(card);
+		if (!swapping && !drawingTwo && !peeking)
+		{
+			StartCallRatTimer();
+		}
 	}
 
 	private List<Transform> CardsComputerDoesntKnow()
@@ -1036,17 +1049,18 @@ public class GameManager : MonoBehaviour {
 	public void UpdateCardStatus(GameObject card)
 	{
 		CardDisplay cardD = card.GetComponent<CardDisplay>();
+		Text cardTransformNumberText = card.transform.parent.parent.GetChild(1).GetComponent<Text>();
 		// If we belong to the player
 		if (card.transform.parent.parent.parent == playerField)
 		{
-			card.transform.parent.parent.GetChild(1).GetComponent<Text>().text =
-				card.GetComponent<CardDisplay>().card.cardType;
+			bool isBottomCard = card.transform.parent.parent.tag == "Bottom Card";
+			cardTransformNumberText.gameObject.SetActive(gameOver || isBottomCard);
+			cardTransformNumberText.text = cardD.card.cardType;
 			cardD.belongsToPlayer = true;
 			cardD.belongsToComputer = false;
 			cardD.isInDiscard = false;
-			bool isBottomCard = card.transform.parent.parent.tag == "Bottom Card";
 			// Only show the front of the card if it's in the bottom two
-			cardD.ShowFront(isBottomCard);
+			cardD.ShowFront(gameOver || isBottomCard);
 			cardD.ShowNumberText(false);
 			cardD.ShowNumberTextDiscard(false);
 		}
@@ -1056,7 +1070,11 @@ public class GameManager : MonoBehaviour {
 			cardD.belongsToPlayer = false;
 			cardD.belongsToComputer = true;
 			cardD.isInDiscard = false;
-			cardD.ShowFront(false);
+			cardD.ShowFront(gameOver);
+			cardD.ShowNumberText(false);
+			cardD.ShowNumberTextDiscard(false);
+			cardTransformNumberText.text = cardD.card.cardType;
+			cardTransformNumberText.gameObject.SetActive(gameOver);
 		}
 		// If we are in the discard
 		else
@@ -1129,6 +1147,7 @@ public class GameManager : MonoBehaviour {
 	// player should be "player" or "computer"
 	public void CallRat(string player)
 	{
+		gameOver = true;
 		callRatTimer.SetActive(false);
 		playerHitCallRat = true;
 		EnablePlayerCards(false);
@@ -1193,7 +1212,7 @@ public class GameManager : MonoBehaviour {
 		{
 			yield return new WaitUntil(() => !swappingPowerCardForCallRat);
 			swappingPowerCardForCallRat = true;
-			StartCoroutine(ReplaceWithTopOfDeck(cardTransform.GetChild(0).GetChild(0)));
+			StartCoroutine(ReplaceWithTopOfDeck(cardTransform));
 		}
 		yield return new WaitUntil(() => !swappingPowerCardForCallRat);
 		callRatText.gameObject.SetActive(false);
@@ -1256,11 +1275,13 @@ public class GameManager : MonoBehaviour {
 		{
 			bool moving = true;
 			topCard.GetComponent<CardDisplay>().ShowFront(true);
+			topCard.GetComponent<CardDisplay>().ShowNumberText(true);
 			topCard.transform.SetParent(canvas);
 			topCard.transform.SetAsLastSibling();
 			LeanTween.move(topCard, discardTransform, 1.0f).setOnComplete(() =>
 			{
-				topCard.transform.SetParent(discardTransform);
+				topCard.transform.SetParent(discardTransform.GetChild(0));
+				UpdateCardStatus(topCard);
 				CreateTopCard();
 				topCard = TopDeck();
 				moving = false;
@@ -1268,16 +1289,20 @@ public class GameManager : MonoBehaviour {
 			yield return new WaitUntil(()=>!moving);
 		}
 		topCard.GetComponent<CardDisplay>().ShowFront(true);
+		topCard.GetComponent<CardDisplay>().ShowNumberText(true);
 		topCard.transform.SetParent(canvas);
 		topCard.transform.SetAsLastSibling();
 		LeanTween.move(topCard, swappingOutCard.transform.position, 1.0f).setOnComplete(() =>
 		{
-			topCard.transform.SetParent(cardTransform);
+			topCard.transform.SetParent(cardTransform.GetChild(0));
+			UpdateCardStatus(topCard);
 			swappingOutCard.transform.SetParent(canvas);
 			swappingOutCard.transform.SetAsLastSibling();
+			swappingOutCard.GetComponent<CardDisplay>().ShowNumberText(true);
 			LeanTween.move(swappingOutCard, discardTransform, 1.0f).setOnComplete(() =>
 			{
-				swappingOutCard.transform.SetParent(discardTransform);
+				swappingOutCard.transform.SetParent(discardTransform.GetChild(0));
+				UpdateCardStatus(swappingOutCard);
 				swappingPowerCardForCallRat = false;
 			});
 		});
